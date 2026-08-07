@@ -14,8 +14,8 @@ export const realBase44 = createClient({
 });
 
 // Local mock storage keys
-const MOCK_SLOTS_KEY = "smartpark_mock_slots_v4";
-const MOCK_RESERVATIONS_KEY = "smartpark_mock_reservations_v4";
+const MOCK_SLOTS_KEY = "smartpark_mock_slots_v5";
+const MOCK_RESERVATIONS_KEY = "smartpark_mock_reservations_v5";
 
 // 3 Floors, 3 Zones per floor (Zone A, B, C), 10 slots per zone = 30 slots per floor (90 slots total)
 function generateSlotsDataset() {
@@ -35,10 +35,11 @@ function generateSlotsDataset() {
       for (let i = 1; i <= 10; i++) {
         const slotNum = zoneIdx * 10 + i; // 1..10, 11..20, 21..30
         const code = `${prefix}-${floor}${slotNum < 10 ? "0" + slotNum : slotNum}`;
-        const isEv = (i % 3 === 0);
-        const isBike = (i === 4 || i === 7);
-        const isOccupied = (i === 3 || i === 8);
-        const isReserved = (i === 6);
+        const isHandicapped = (zone === "A" && (i === 1 || i === 2)); // 1-2 bays near Mall Entrance per floor
+        const isEv = !isHandicapped && (i % 3 === 0);
+        const isBike = !isHandicapped && (i === 4 || i === 7);
+        const isOccupied = !isHandicapped && (i === 3 || i === 8);
+        const isReserved = isHandicapped || (i === 6);
         
         let status = "available";
         if (isOccupied) status = "occupied";
@@ -51,7 +52,8 @@ function generateSlotsDataset() {
           zone,
           vehicle_type: isBike ? "bike" : "car",
           is_ev: isEv,
-          hourly_rate: isBike ? 20 : isEv ? 80 : 60,
+          is_handicapped: isHandicapped,
+          hourly_rate: isHandicapped ? 40 : isBike ? 20 : isEv ? 80 : 60,
           status,
         });
       }
