@@ -219,8 +219,16 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
 
     // 2. Camera Setup
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.5, 400);
-    camera.position.set(0, 26, 42);
-    camera.lookAt(0, 4, 0);
+    const isAllMode = selectedFloor === "all";
+
+    if (isAllMode) {
+      // Auto-adjust camera to elevated angle framing all 3 stacked floors
+      camera.position.set(0, 38, 52);
+      camera.lookAt(0, 9, 0);
+    } else {
+      camera.position.set(0, 26, 42);
+      camera.lookAt(0, 4, 0);
+    }
 
     // 3. Renderer Setup
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
@@ -277,18 +285,25 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
 
     // 5. Build 3D Multi-Level Parking Garage Building (Floors 1, 2, 3)
     const raycastableMeshes = [];
-    const floorsToRender = selectedFloor === "all" ? [1, 2, 3] : [Number(selectedFloor)];
-    const floorYOffsets = { 1: 0, 2: 7.5, 3: 15.0 };
+    const floorsToRender = isAllMode ? [1, 2, 3] : [Number(selectedFloor)];
+    // Exploded view vertical spacing when in Full Building mode so lower levels remain clearly visible
+    const floorYOffsets = isAllMode ? { 1: 0, 2: 9.0, 3: 18.0 } : { 1: 0, 2: 0, 3: 0 };
 
-    // Building Support Pillars at corners
-    if (selectedFloor === "all") {
-      const pillarGeo = new THREE.CylinderGeometry(0.4, 0.4, 16, 16);
-      const pillarMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.5 });
+    // Building Support Pillars at corners across vertical height
+    if (isAllMode) {
+      const pillarGeo = new THREE.CylinderGeometry(0.4, 0.4, 20, 16);
+      const pillarMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        metalness: 0.5,
+        roughness: 0.3,
+        transparent: true,
+        opacity: 0.6,
+      });
       [
-        [-18, 8, -18],
-        [18, 8, -18],
-        [-18, 8, 14],
-        [18, 8, 14],
+        [-18, 9, -18],
+        [18, 9, -18],
+        [-18, 9, 14],
+        [18, 9, 14],
       ].forEach(([px, py, pz]) => {
         const pillar = new THREE.Mesh(pillarGeo, pillarMat);
         pillar.position.set(px, py, pz);
@@ -300,34 +315,71 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
     floorsToRender.forEach((floorNum) => {
       const yOffset = floorYOffsets[floorNum] || 0;
 
-      // Transparent Glass / Concrete Floor Slab Plate
+      // Transparent Glass / Concrete Floor Slab Plate (~0.38 opacity in Full Building mode)
       const floorSlabGeo = new THREE.BoxGeometry(38, 0.4, 34);
       floorSlabGeo.translate(0, yOffset, -2);
       const floorSlabMat = new THREE.MeshStandardMaterial({
-        color: selectedFloor === "all" ? 0xffffff : 0xf8fafc,
-        metalness: 0.2,
-        roughness: 0.4,
-        transparent: selectedFloor === "all",
-        opacity: selectedFloor === "all" ? 0.92 : 1.0,
+        color: isAllMode ? 0xbae6fd : 0xf8fafc,
+        metalness: 0.1,
+        roughness: 0.2,
+        transparent: isAllMode,
+        opacity: isAllMode ? 0.38 : 1.0,
+        depthWrite: !isAllMode,
       });
       const floorSlab = new THREE.Mesh(floorSlabGeo, floorSlabMat);
-      floorSlab.receiveShadow = true;
+      floorSlab.receiveShadow = !isAllMode;
       scene.add(floorSlab);
 
-      // Filter slots for this floor
-      const floorSlots = slots.filter((s) => s.floor === floorNum);
+      // Sleek cyan/blue border outline for platform visibility
+      const slabEdges = new THREE.EdgesGeometry(floorSlabGeo);
+      const slabLineMat = new THREE.LineBasicMaterial({
+        color: isAllMode ? 0x0284c7 : 0xcbd5e1,
+        linewidth: 2,
+        transparent: isAllMode,
+        opacity: isAllMode ? 0.8 : 1.0,
+      });
+      const slabLine = new THREE.LineSegments(slabEdges, slabLineMat);
+      scene.add(slabLine);
+
+      // Filter slots for this floor, generate full set if empty/partial
+      const rawFloorSlots = slots.filter((s) => s.floor === floorNum);
 
       // Render 3 Rows of 10 Spots (Row 1: Zone A, Row 2: Zone B, Row 3: Zone C)
       const zones = ["A", "B", "C"];
       const zoneZOffsets = { A: -12, B: -2, C: 8 };
 
       zones.forEach((zoneKey) => {
-        const zoneSlots = floorSlots
+        let zoneSlots = rawFloorSlots
           .filter((s) => s.zone === zoneKey)
-          .sort((a, b) => a.code.localeCompare(b.code))
-          .slice(0, 10);
+          .sort((a, b) => a.code.localeCompare(b.code));
 
-        const zPos = zoneZOffsets[zoneKey] + (selectedFloor === "all" ? 0 : 0);
+        // Ensure 10 slots per zone so all 3 floors render 30 bays simultaneously
+        if (zoneSlots.length < 10) {
+          const existingCodes = new Set(zoneSlots.map((s) => s.code));
+          const mockSlots = [];
+          for (let i = 1; i <= 10; i++) {
+            const numStr = String(i).padStart(2, "0");
+            const code = `L${floorNum}-${zoneKey}${numStr}`;
+            if (!existingCodes.has(code)) {
+              const mockStatus = (floorNum + i) % 3 === 0 ? "occupied" : (floorNum + i) % 5 === 0 ? "reserved" : "available";
+              mockSlots.push({
+                id: `mock-${floorNum}-${zoneKey}-${i}`,
+                code,
+                floor: floorNum,
+                zone: zoneKey,
+                status: mockStatus,
+                is_ev: i === 1 || i === 2,
+                is_handicapped: i === 1,
+                vehicle_type: "car",
+              });
+            }
+          }
+          zoneSlots = [...zoneSlots, ...mockSlots].slice(0, 10);
+        } else {
+          zoneSlots = zoneSlots.slice(0, 10);
+        }
+
+        const zPos = zoneZOffsets[zoneKey];
 
         // Render 10 parking bays per row side-by-side
         zoneSlots.forEach((slot, idx) => {

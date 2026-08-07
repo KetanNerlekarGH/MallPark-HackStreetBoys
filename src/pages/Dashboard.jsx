@@ -117,7 +117,7 @@ export default function Dashboard() {
                 <span className="flex items-center gap-2"><Zap className="w-3 h-3 text-sky-500" /> EV charging</span>
             </div>
 
-            <Floor3DView slots={floorSlots} highlightCode={directions?.code} onSelect={setSelected} />
+            <Floor3DView slots={slots} highlightCode={directions?.code} onSelect={setSelected} />
 
             {loading ? (
                 <div className="h-64 flex items-center justify-center">
