@@ -74,7 +74,7 @@ export default function Login() {
                             type="text"
                             autoComplete="username"
                             autoFocus
-                            placeholder="Enter username (e.g. emilys)"
+                            placeholder="Enter username (e.g. john123)"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             className="pl-10 h-12"
