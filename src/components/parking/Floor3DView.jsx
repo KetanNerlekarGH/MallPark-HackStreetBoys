@@ -195,10 +195,19 @@ function createPBadge() {
   return group;
 }
 
-export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
+export default function Floor3DView({
+  slots = [],
+  highlightCode,
+  onSelect,
+  selectedFloor: propSelectedFloor,
+  setSelectedFloor: propSetSelectedFloor,
+}) {
   const mountRef = useRef(null);
-  const [selectedFloor, setSelectedFloor] = useState("all"); // 'all', 1, 2, 3
+  const [internalSelectedFloor, setInternalSelectedFloor] = useState("all");
   const [autoRotate, setAutoRotate] = useState(false);
+
+  const selectedFloor = propSelectedFloor !== undefined ? propSelectedFloor : internalSelectedFloor;
+  const setSelectedFloor = propSetSelectedFloor || setInternalSelectedFloor;
 
   const CAR_COLORS = useMemo(
     () => ["#e2e8f0", "#94a3b8", "#334155", "#0f172a", "#1e3a8a", "#0284c7", "#b91c1c", "#15803d", "#7c3aed"],
@@ -217,17 +226,29 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
     scene.background = new THREE.Color("#f1f5f9");
     scene.fog = new THREE.FogExp2("#f1f5f9", 0.006);
 
-    // 2. Camera Setup
+    const isAllMode = String(selectedFloor).toLowerCase() === "all";
+
+    // Fixed 3D Height per Level (Level 1: Y=0, Level 2: Y=9.0, Level 3: Y=18.0)
+    const FLOOR_HEIGHT = 9.0;
+    const floorYOffsets = {
+      1: 0 * FLOOR_HEIGHT,
+      2: 1 * FLOOR_HEIGHT,
+      3: 2 * FLOOR_HEIGHT,
+    };
+
+    // 2. Camera Setup - Auto-adjust camera focus & target to active floor's 3D height
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.5, 400);
-    const isAllMode = selectedFloor === "all";
 
     if (isAllMode) {
       // Auto-adjust camera to elevated angle framing all 3 stacked floors
       camera.position.set(0, 38, 52);
-      camera.lookAt(0, 9, 0);
+      camera.lookAt(0, 9.0, 0);
     } else {
-      camera.position.set(0, 26, 42);
-      camera.lookAt(0, 4, 0);
+      const activeLevelNum = Number(selectedFloor) || 1;
+      const targetY = floorYOffsets[activeLevelNum] ?? 0;
+      // Focus camera directly on the active level's fixed 3D elevation
+      camera.position.set(0, targetY + 26, 42);
+      camera.lookAt(0, targetY + 2.0, 0);
     }
 
     // 3. Renderer Setup
@@ -285,9 +306,7 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
 
     // 5. Build 3D Multi-Level Parking Garage Building (Floors 1, 2, 3)
     const raycastableMeshes = [];
-    const floorsToRender = isAllMode ? [1, 2, 3] : [Number(selectedFloor)];
-    // Exploded view vertical spacing when in Full Building mode so lower levels remain clearly visible
-    const floorYOffsets = isAllMode ? { 1: 0, 2: 9.0, 3: 18.0 } : { 1: 0, 2: 0, 3: 0 };
+    const floorsToRender = [1, 2, 3];
 
     // Building Support Pillars at corners across vertical height
     if (isAllMode) {
@@ -313,7 +332,11 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
     }
 
     floorsToRender.forEach((floorNum) => {
-      const yOffset = floorYOffsets[floorNum] || 0;
+      // ✅ Keep fixed Y height, control visibility instead of resetting elevation to 0
+      const isVisible = isAllMode || String(selectedFloor) === String(floorNum);
+      if (!isVisible) return;
+
+      const yOffset = floorYOffsets[floorNum];
 
       // Transparent Glass / Concrete Floor Slab Plate (~0.38 opacity in Full Building mode)
       const floorSlabGeo = new THREE.BoxGeometry(38, 0.4, 34);
@@ -533,7 +556,7 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
         {/* Level Switcher Buttons */}
         <div className="flex flex-wrap items-center gap-1.5">
           <Button
-            variant={selectedFloor === "all" ? "default" : "outline"}
+            variant={String(selectedFloor).toLowerCase() === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedFloor("all")}
             className="rounded-full text-xs font-medium h-9"
@@ -542,7 +565,7 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
             Full Building
           </Button>
           <Button
-            variant={selectedFloor === 1 ? "default" : "outline"}
+            variant={String(selectedFloor) === "1" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedFloor(1)}
             className="rounded-full text-xs font-medium h-9"
@@ -550,7 +573,7 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
             Level 1
           </Button>
           <Button
-            variant={selectedFloor === 2 ? "default" : "outline"}
+            variant={String(selectedFloor) === "2" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedFloor(2)}
             className="rounded-full text-xs font-medium h-9"
@@ -558,7 +581,7 @@ export default function Floor3DView({ slots = [], highlightCode, onSelect }) {
             Level 2
           </Button>
           <Button
-            variant={selectedFloor === 3 ? "default" : "outline"}
+            variant={String(selectedFloor) === "3" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedFloor(3)}
             className="rounded-full text-xs font-medium h-9"

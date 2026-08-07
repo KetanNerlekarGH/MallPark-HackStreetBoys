@@ -18,10 +18,10 @@ export default function Filters({ floors, floor, setFloor, type, setType, evOnly
             key={f}
             onClick={() => setFloor(f)}
             className={`px-4 py-2 rounded-full text-sm border transition-colors ${
-              floor === f ? "bg-foreground text-background border-foreground" : "hover:bg-muted text-muted-foreground"
+              String(floor) === String(f) ? "bg-foreground text-background border-foreground" : "hover:bg-muted text-muted-foreground"
             }`}
           >
-            Level {f}
+            {f === "all" ? "Full Building" : `Level ${f}`}
           </button>
         ))}
       </div>

@@ -46,8 +46,16 @@ export default function Dashboard() {
         return () => clearInterval(id);
     }, []);
 
-    const floors = useMemo(() => [...new Set(slots.map((s) => s.floor))].sort(), [slots]);
-    const floorSlots = slots.filter((s) => s.floor === floor);
+    const floors = useMemo(() => {
+        const unique = [...new Set(slots.map((s) => s.floor))].sort((a, b) => a - b);
+        return ["all", ...unique];
+    }, [slots]);
+
+    const floorSlots = useMemo(() => {
+        if (floor === "all") return slots;
+        return slots.filter((s) => s.floor === Number(floor));
+    }, [slots, floor]);
+
     const visible = floorSlots.filter(
         (s) =>
             (type === "all" || s.vehicle_type === type) &&
@@ -92,9 +100,9 @@ export default function Dashboard() {
             />
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Available" value={free} sub={`of ${total} on Level ${floor}`} icon={CircleParking} accent="text-emerald-500" />
-                <StatCard label="Occupied" value={total - free} sub="currently parked" icon={CarFront} accent="text-rose-500" />
-                <StatCard label="Occupancy" value={`${rate}%`} sub="this level" icon={Percent} />
+                <StatCard label="Available" value={free} sub={floor === "all" ? "all floors" : `of ${total} on Level ${floor}`} icon={CircleParking} accent="text-emerald-500" />
+                <StatCard label="Occupied" value={total - free} sub={floor === "all" ? "all floors" : "currently parked"} icon={CarFront} accent="text-rose-500" />
+                <StatCard label="Occupancy" value={`${rate}%`} sub={floor === "all" ? "full building" : "this level"} icon={Percent} />
                 <StatCard label="EV free" value={evFree} sub="charging bays" icon={Zap} accent="text-sky-500" />
             </div>
 
@@ -117,7 +125,13 @@ export default function Dashboard() {
                 <span className="flex items-center gap-2"><Zap className="w-3 h-3 text-sky-500" /> EV charging</span>
             </div>
 
-            <Floor3DView slots={slots} highlightCode={directions?.code} onSelect={setSelected} />
+            <Floor3DView
+                slots={slots}
+                highlightCode={directions?.code}
+                onSelect={setSelected}
+                selectedFloor={floor}
+                setSelectedFloor={setFloor}
+            />
 
             {loading ? (
                 <div className="h-64 flex items-center justify-center">
