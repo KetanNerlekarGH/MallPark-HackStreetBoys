@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 210 25% 98%;
+        --foreground: 224 30% 13%;
+        --card: 0 0% 100%;
+        --card-foreground: 224 30% 13%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 224 30% 13%;
+        --primary: 233 62% 44%;
+        --primary-foreground: 210 40% 98%;
+        --secondary: 220 18% 95%;
+        --secondary-foreground: 224 30% 18%;
+        --muted: 220 18% 95%;
+        --muted-foreground: 224 12% 44%;
+        --accent: 205 80% 60%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 358 72% 54%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 18% 90%;
+        --input: 220 18% 90%;
+        --ring: 233 62% 44%;
+        --chart-1: 12 76% 61%;
+        --chart-2: 173 58% 39%;
+        --chart-3: 197 37% 24%;
+        --chart-4: 43 74% 66%;
+        --chart-5: 27 87% 67%;
+        --radius: 0.75rem;
+        --font-heading: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        --font-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sidebar-background: 0 0% 100%;
+        --sidebar-foreground: 224 30% 18%;
+        --sidebar-primary: 233 62% 44%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 220 18% 96%;
+        --sidebar-accent-foreground: 224 30% 18%;
+        --sidebar-border: 220 18% 91%;
+        --sidebar-ring: 233 62% 44%;
+    }
+
+    .dark {
+        --background: 224 30% 7%;
+        --foreground: 220 25% 95%;
+        --card: 224 26% 11%;
+        --card-foreground: 220 25% 95%;
+        --popover: 224 26% 11%;
+        --popover-foreground: 220 25% 95%;
+        --primary: 233 70% 62%;
+        --primary-foreground: 224 30% 8%;
+        --secondary: 224 20% 17%;
+        --secondary-foreground: 220 25% 95%;
+        --muted: 224 20% 16%;
+        --muted-foreground: 220 14% 62%;
+        --accent: 205 80% 62%;
+        --accent-foreground: 224 30% 8%;
+        --destructive: 358 70% 60%;
+        --destructive-foreground: 220 25% 95%;
+        --border: 224 18% 19%;
+        --input: 224 18% 19%;
+        --ring: 233 70% 62%;
+        --chart-1: 220 70% 60%;
+        --chart-2: 160 60% 50%;
+        --chart-3: 30 80% 60%;
+        --chart-4: 280 65% 65%;
+        --chart-5: 340 75% 60%;
+        --sidebar-background: 224 30% 10%;
+        --sidebar-foreground: 220 25% 92%;
+        --sidebar-primary: 233 70% 62%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 224 20% 18%;
+        --sidebar-accent-foreground: 220 25% 95%;
+        --sidebar-border: 224 18% 19%;
+        --sidebar-ring: 233 70% 62%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply bg-background text-foreground font-body antialiased;
+    }
+}

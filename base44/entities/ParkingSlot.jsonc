@@ -1,0 +1,49 @@
+{
+  "name": "ParkingSlot",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Slot code e.g. L1-A04"
+    },
+    "floor": {
+      "type": "number",
+      "description": "Floor level number"
+    },
+    "zone": {
+      "type": "string"
+    },
+    "vehicle_type": {
+      "type": "string",
+      "enum": [
+        "car",
+        "bike",
+        "suv"
+      ],
+      "default": "car"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "occupied",
+        "reserved"
+      ],
+      "default": "available"
+    },
+    "is_ev": {
+      "type": "boolean",
+      "default": false
+    },
+    "hourly_rate": {
+      "type": "number",
+      "default": 40
+    }
+  },
+  "required": [
+    "code",
+    "floor",
+    "vehicle_type",
+    "status"
+  ]
+}

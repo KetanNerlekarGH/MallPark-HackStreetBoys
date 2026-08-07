@@ -1,0 +1,51 @@
+{
+  "name": "Reservation",
+  "type": "object",
+  "properties": {
+    "slot_code": {
+      "type": "string"
+    },
+    "floor": {
+      "type": "number"
+    },
+    "vehicle_type": {
+      "type": "string"
+    },
+    "vehicle_number": {
+      "type": "string"
+    },
+    "hours": {
+      "type": "number",
+      "default": 1
+    },
+    "estimated_fee": {
+      "type": "number"
+    },
+    "is_ev": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "cancelled",
+        "completed"
+      ],
+      "default": "active"
+    },
+    "paid_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "slot_code",
+    "floor",
+    "hours"
+  ]
+}
