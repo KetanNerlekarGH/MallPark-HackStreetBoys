@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Zap, Clock } from "lucide-react";
+import VehicleNumberInput, { isValidVehicleNumber } from "./VehicleNumberInput";
 
 export default function ManageReservationDialog({ reservation, slot, onClose, onSave, onCancel }) {
   const [hours, setHours] = useState(reservation?.hours || 1);
@@ -22,6 +22,7 @@ export default function ManageReservationDialog({ reservation, slot, onClose, on
   const hourly = slot?.hourly_rate || (reservation.vehicle_type === "bike" ? 20 : reservation.vehicle_type === "suv" ? 60 : 40);
   const evFee = reservation.is_ev ? 30 * hours : 0;
   const fee = hourly * hours + evFee;
+  const isValidVehicle = isValidVehicleNumber(vehicleNumber);
 
   const created = new Date(reservation.created_date).getTime();
   const elapsedMs = Math.max(0, now - created);
@@ -31,6 +32,7 @@ export default function ManageReservationDialog({ reservation, slot, onClose, on
   const cancelFee = Math.round(hoursUsed * rate);
 
   const save = async () => {
+    if (!isValidVehicle) return;
     setSaving(true);
     await onSave({ reservation, hours: Number(hours), vehicleNumber, fee });
     setSaving(false);
@@ -96,10 +98,8 @@ export default function ManageReservationDialog({ reservation, slot, onClose, on
                 ? `Parked ${hoursUsed}h — cancellation payable`
                 : `Free cancel within ${5 - Math.floor(elapsedMs / 60000)} min`}
             </div>
-            <div className="space-y-2">
-              <Label>Vehicle number</Label>
-              <Input value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())} placeholder="KA 01 AB 1234" />
-            </div>
+            <VehicleNumberInput value={vehicleNumber} onChange={setVehicleNumber} />
+
             <div className="space-y-2">
               <Label>Total duration: {hours} hour{hours > 1 ? "s" : ""}</Label>
               <input type="range" min="1" max="12" value={hours} onChange={(e) => setHours(Number(e.target.value))} className="w-full accent-sky-500" />
@@ -112,7 +112,7 @@ export default function ManageReservationDialog({ reservation, slot, onClose, on
               <span className="text-3xl font-semibold tracking-tight">₹{fee}</span>
             </div>
             <div className="flex gap-3">
-              <Button className="flex-1 rounded-full h-11" disabled={!vehicleNumber || saving} onClick={save}>
+              <Button className="flex-1 rounded-full h-11" disabled={!isValidVehicle || saving} onClick={save}>
                 {saving ? "Saving…" : "Save changes"}
               </Button>
               <Button variant="outline" className="rounded-full h-11 text-destructive hover:text-destructive" disabled={cancelling} onClick={requestCancel}>

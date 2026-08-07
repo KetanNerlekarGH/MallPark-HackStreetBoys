@@ -14,79 +14,63 @@ export const realBase44 = createClient({
 });
 
 // Local mock storage keys
-const MOCK_SLOTS_KEY = "smartpark_mock_slots_v3";
-const MOCK_RESERVATIONS_KEY = "smartpark_mock_reservations_v3";
+const MOCK_SLOTS_KEY = "smartpark_mock_slots_v4";
+const MOCK_RESERVATIONS_KEY = "smartpark_mock_reservations_v4";
 
-// 3 Levels of parking with 16 spacious slots per level (48 slots total across Zone A & Zone B)
-const initialSlots = [
-  // LEVEL 1 (Ground Floor - 16 Slots)
-  // Zone A
-  { id: "1", code: "A-101", floor: 1, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "2", code: "A-102", floor: 1, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "3", code: "A-103", floor: 1, zone: "A", vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "4", code: "A-104", floor: 1, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "5", code: "A-105", floor: 1, zone: "A", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "6", code: "A-106", floor: 1, zone: "A", vehicle_type: "car", is_ev: false, status: "reserved" },
-  { id: "7", code: "A-107", floor: 1, zone: "A", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "8", code: "A-108", floor: 1, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
-  // Zone B
-  { id: "9", code: "A-109", floor: 1, zone: "B", vehicle_type: "car", is_ev: true, status: "occupied" },
-  { id: "10", code: "A-110", floor: 1, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "11", code: "A-111", floor: 1, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "12", code: "A-112", floor: 1, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "13", code: "A-113", floor: 1, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "14", code: "A-114", floor: 1, zone: "B", vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "15", code: "A-115", floor: 1, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "16", code: "A-116", floor: 1, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
+// 3 Floors, 3 Zones per floor (Zone A, B, C), 10 slots per zone = 30 slots per floor (90 slots total)
+function generateSlotsDataset() {
+  const slots = [];
+  let idCounter = 1;
 
-  // LEVEL 2 (Central Deck - 16 Slots)
-  // Zone A
-  { id: "17", code: "B-201", floor: 2, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "18", code: "B-202", floor: 2, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "19", code: "B-203", floor: 2, zone: "A", vehicle_type: "bike", is_ev: false, status: "occupied" },
-  { id: "20", code: "B-204", floor: 2, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "21", code: "B-205", floor: 2, zone: "A", vehicle_type: "car", is_ev: false, status: "reserved" },
-  { id: "22", code: "B-206", floor: 2, zone: "A", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "23", code: "B-207", floor: 2, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "24", code: "B-208", floor: 2, zone: "A", vehicle_type: "car", is_ev: false, status: "occupied" },
-  // Zone B
-  { id: "25", code: "B-209", floor: 2, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "26", code: "B-210", floor: 2, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "27", code: "B-211", floor: 2, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "28", code: "B-212", floor: 2, zone: "B", vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "29", code: "B-213", floor: 2, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "30", code: "B-214", floor: 2, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "31", code: "B-215", floor: 2, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "32", code: "B-216", floor: 2, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
+  const floorConfigs = [
+    { floor: 1, prefix: "A" },
+    { floor: 2, prefix: "B" },
+    { floor: 3, prefix: "C" },
+  ];
 
-  // LEVEL 3 (Executive & EV Deck - 16 Slots)
-  // Zone A
-  { id: "33", code: "C-301", floor: 3, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "34", code: "C-302", floor: 3, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "35", code: "C-303", floor: 3, zone: "A", vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "36", code: "C-304", floor: 3, zone: "A", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "37", code: "C-305", floor: 3, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "38", code: "C-306", floor: 3, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "39", code: "C-307", floor: 3, zone: "A", vehicle_type: "bike", is_ev: false, status: "occupied" },
-  { id: "40", code: "C-308", floor: 3, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
-  // Zone B
-  { id: "41", code: "C-309", floor: 3, zone: "B", vehicle_type: "car", is_ev: true, status: "occupied" },
-  { id: "42", code: "C-310", floor: 3, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "43", code: "C-311", floor: 3, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "44", code: "C-312", floor: 3, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "45", code: "C-313", floor: 3, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "46", code: "C-314", floor: 3, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "47", code: "C-315", floor: 3, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "48", code: "C-316", floor: 3, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
-];
+  const zones = ["A", "B", "C"];
+
+  floorConfigs.forEach(({ floor, prefix }) => {
+    zones.forEach((zone, zoneIdx) => {
+      for (let i = 1; i <= 10; i++) {
+        const slotNum = zoneIdx * 10 + i; // 1..10, 11..20, 21..30
+        const code = `${prefix}-${floor}${slotNum < 10 ? "0" + slotNum : slotNum}`;
+        const isEv = (i % 3 === 0);
+        const isBike = (i === 4 || i === 7);
+        const isOccupied = (i === 3 || i === 8);
+        const isReserved = (i === 6);
+        
+        let status = "available";
+        if (isOccupied) status = "occupied";
+        else if (isReserved) status = "reserved";
+
+        slots.push({
+          id: String(idCounter++),
+          code,
+          floor,
+          zone,
+          vehicle_type: isBike ? "bike" : "car",
+          is_ev: isEv,
+          hourly_rate: isBike ? 20 : isEv ? 80 : 60,
+          status,
+        });
+      }
+    });
+  });
+
+  return slots;
+}
+
+const initialSlots = generateSlotsDataset();
 
 const initialReservations = [
   {
     id: "res-1",
     slot_code: "A-106",
     floor: 1,
+    zone: "A",
     vehicle_type: "car",
-    vehicle_number: "KA-01-AB-1234",
+    vehicle_number: "KA 01 AB 1234",
     hours: 2,
     estimated_fee: 120,
     is_ev: false,
@@ -95,10 +79,11 @@ const initialReservations = [
   },
   {
     id: "res-2",
-    slot_code: "B-205",
+    slot_code: "B-216",
     floor: 2,
+    zone: "B",
     vehicle_type: "car",
-    vehicle_number: "MH-12-CD-5678",
+    vehicle_number: "MH 12 CD 5678",
     hours: 3,
     estimated_fee: 180,
     is_ev: false,
@@ -110,7 +95,10 @@ const initialReservations = [
 function getStoredSlots() {
   try {
     const raw = localStorage.getItem(MOCK_SLOTS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.length >= 90) return parsed;
+    }
     localStorage.setItem(MOCK_SLOTS_KEY, JSON.stringify(initialSlots));
     return initialSlots;
   } catch (e) {
@@ -138,6 +126,27 @@ function getStoredReservations() {
 function saveStoredReservations(resList) {
   try {
     localStorage.setItem(MOCK_RESERVATIONS_KEY, JSON.stringify(resList));
+  } catch (e) {}
+}
+
+// Helper to dispatch real verification email via HTTP fetch API
+async function sendGmailCode(email, code) {
+  try {
+    fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        service_id: "service_smartpark",
+        template_id: "template_otp",
+        user_id: "smartpark_public_app",
+        template_params: {
+          to_email: email,
+          recipient: email,
+          otp_code: code,
+          message: `Your SmartPark Gmail verification code is: ${code}`
+        }
+      })
+    }).catch(() => {});
   } catch (e) {}
 }
 
@@ -178,7 +187,7 @@ export const base44 = {
       } catch (e) {}
       const mockUser = {
         id: "g_" + Date.now(),
-        email: customUser?.email || "alex.demo@gmail.com",
+        email: customUser?.email || "user.google@gmail.com",
         full_name: customUser?.full_name || (customUser?.email ? customUser.email.split("@")[0] : "Google User"),
         avatar: customUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(customUser?.email || "Google")}`
       };
@@ -191,28 +200,12 @@ export const base44 = {
           return await realBase44.auth.register({ email, password });
         }
       } catch (e) {}
-      // Generate a 6-digit verification code
+      // Generate 6-digit code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       localStorage.setItem("smartpark_otp_" + email, code);
 
-      // Dispatch real email via API
-      try {
-        fetch("https://api.emailjs.com/api/v1.0/email/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            service_id: "service_smartpark",
-            template_id: "template_otp",
-            user_id: "smartpark_app",
-            template_params: {
-              to_email: email,
-              email: email,
-              otp_code: code,
-              message: `Your SmartPark Gmail verification code is: ${code}`
-            }
-          })
-        }).catch(() => {});
-      } catch (e) {}
+      // Dispatch to Gmail inbox via API
+      sendGmailCode(email, code);
 
       return { success: true, email };
     },
@@ -224,7 +217,7 @@ export const base44 = {
       } catch (e) {}
       const storedCode = localStorage.getItem("smartpark_otp_" + email);
       if (storedCode && otpCode.trim() !== storedCode.trim() && otpCode !== "123456") {
-        const err = new Error(`Incorrect verification code. Please check your Gmail inbox (${email}) and enter the code received.`);
+        const err = new Error(`Incorrect code. Please enter the 6-digit verification code sent to ${email}.`);
         throw err;
       }
       const mockUser = {
@@ -243,23 +236,7 @@ export const base44 = {
       } catch (e) {}
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       localStorage.setItem("smartpark_otp_" + email, code);
-      try {
-        fetch("https://api.emailjs.com/api/v1.0/email/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            service_id: "service_smartpark",
-            template_id: "template_otp",
-            user_id: "smartpark_app",
-            template_params: {
-              to_email: email,
-              email: email,
-              otp_code: code,
-              message: `Your new SmartPark Gmail verification code is: ${code}`
-            }
-          })
-        }).catch(() => {});
-      } catch (e) {}
+      sendGmailCode(email, code);
       return { success: true };
     },
     setToken: (token) => {
@@ -372,13 +349,13 @@ export const base44 = {
         }
       } catch (e) {}
       const q = (payload?.question || "").toLowerCase();
-      let answer = "I am your AI Parking Assistant! You can check spot availability across Level 1, 2 & 3 on the Dashboard or view active bookings under Reservations.";
+      let answer = "I am your AI Parking Assistant! You can check spot availability across 3 Floors (Zones A, B, C with 30 slots per floor) on the Dashboard or view active bookings under Reservations.";
       if (q.includes("cancel")) {
         answer = "To cancel a reservation, open the Reservations tab and click 'Cancel Booking' on your active reservation.";
       } else if (q.includes("ev") || q.includes("charging")) {
-        answer = "EV charging bays (marked with ⚡) are located in Zone A & B across Levels 1, 2, and 3. Use the EV filter on the Dashboard to find free spots.";
+        answer = "EV charging bays (marked with ⚡) are located in Zones A, B, & C across Levels 1, 2, and 3. Use the EV filter on the Dashboard to find free spots.";
       } else if (q.includes("fee") || q.includes("cost") || q.includes("rate") || q.includes("price") || q.includes("calculat")) {
-        answer = "Parking fees are ₹60/hour for standard slots and ₹80/hour for EV charging bays.";
+        answer = "Parking fees are ₹60/hour for standard slots, ₹20/hr for bikes, and ₹80/hour for EV charging bays.";
       } else if (q.includes("extend")) {
         answer = "You can extend your parking time directly from your active booking card in the Reservations tab.";
       }

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Zap } from "lucide-react";
+import VehicleNumberInput, { isValidVehicleNumber } from "./VehicleNumberInput";
 
 export default function ReserveDialog({ slot, onClose, onConfirm }) {
   const [hours, setHours] = useState(2);
@@ -13,8 +13,10 @@ export default function ReserveDialog({ slot, onClose, onConfirm }) {
   if (!slot) return null;
   const evFee = slot.is_ev ? 30 * hours : 0;
   const fee = slot.hourly_rate * hours + evFee;
+  const isValidVehicle = isValidVehicleNumber(vehicleNumber);
 
   const confirm = async () => {
+    if (!isValidVehicle) return;
     setSaving(true);
     await onConfirm({ slot, hours: Number(hours), vehicleNumber, fee });
     setSaving(false);
@@ -34,19 +36,20 @@ export default function ReserveDialog({ slot, onClose, onConfirm }) {
             Level {slot.floor} · Zone {slot.zone} · {slot.vehicle_type.toUpperCase()} · ₹{slot.hourly_rate}/hr
             {slot.is_ev && " + ₹30/hr charging"}
           </p>
-          <div className="space-y-2">
-            <Label>Vehicle number</Label>
-            <Input value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())} placeholder="KA 01 AB 1234" />
-          </div>
+
+          <VehicleNumberInput value={vehicleNumber} onChange={setVehicleNumber} />
+
           <div className="space-y-2">
             <Label>Duration: {hours} hour{hours > 1 ? "s" : ""}</Label>
             <input type="range" min="1" max="8" value={hours} onChange={(e) => setHours(Number(e.target.value))} className="w-full accent-emerald-500" />
           </div>
+
           <div className="rounded-2xl bg-muted p-4 flex items-baseline justify-between">
             <span className="text-sm text-muted-foreground">Estimated fee</span>
             <span className="text-3xl font-semibold tracking-tight">₹{fee}</span>
           </div>
-          <Button className="w-full rounded-full h-11" disabled={!vehicleNumber || saving} onClick={confirm}>
+
+          <Button className="w-full rounded-full h-11" disabled={!isValidVehicle || saving} onClick={confirm}>
             {saving ? "Reserving…" : "Confirm reservation"}
           </Button>
         </div>
