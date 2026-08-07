@@ -12,11 +12,11 @@ import { LogOut } from "lucide-react";
 
 export default function ProfileMenu() {
   const { user, logout } = useAuth();
-  const initial = (user?.email || user?.full_name || "U").charAt(0).toUpperCase();
+  const displayName = user?.username || user?.firstName || user?.email || "Account";
+  const initial = displayName.charAt(0).toUpperCase();
 
   const handleLogout = () => {
-    logout(false);
-    window.location.href = "/login";
+    logout(true);
   };
 
   return (
@@ -30,12 +30,12 @@ export default function ProfileMenu() {
             {initial}
           </span>
           <span className="hidden sm:inline text-sm font-medium max-w-[120px] truncate">
-            {user?.email || "Account"}
+            {displayName}
           </span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 rounded-2xl">
-        <DropdownMenuLabel className="truncate">{user?.email || "Signed in"}</DropdownMenuLabel>
+        <DropdownMenuLabel className="truncate">{user?.username ? `@${user.username}` : displayName}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer" onClick={handleLogout}>
           <LogOut className="w-4 h-4 mr-2" /> Log out

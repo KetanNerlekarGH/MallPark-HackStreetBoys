@@ -1,147 +1,59 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { Link, useNavigate } from "react-router-dom";
+import { signUpUser } from "@/api/authApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2, CheckCircle2, KeyRound } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { UserPlus, User, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
-import GoogleIcon from "@/components/GoogleIcon";
-import GoogleAccountModal from "@/components/GoogleAccountModal";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
 
 export default function Register() {
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [showOtp, setShowOtp] = useState(false);
-    const [otpCode, setOtpCode] = useState("");
-    const [showGoogleModal, setShowGoogleModal] = useState(false);
+
+    const navigate = useNavigate();
+    const returnTo = safeReturnTo();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+
         if (password !== confirmPassword) {
             setError("Passwords do not match");
             return;
         }
+
         setLoading(true);
         try {
-            await base44.auth.register({ email, password });
-            setShowOtp(true);
-            toast({
-                title: "Gmail Verification Code Sent",
-                description: `A 6-digit code has been sent to ${email}. Check your Gmail inbox.`,
+            await signUpUser({
+                firstName,
+                lastName,
+                email,
+                username,
+                password,
             });
+
+            toast({
+                title: "Account Created Successfully!",
+                description: `Welcome ${firstName}! Please log in with your username and password.`,
+            });
+
+            const loginUrl = "/login" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "");
+            navigate(loginUrl);
         } catch (err) {
-            setError(err.message || "Registration failed");
+            setError(err.message || "Registration failed. Please try again.");
         } finally {
             setLoading(false);
         }
     };
-
-    const handleVerify = async () => {
-        setError("");
-        setLoading(true);
-        try {
-            const result = await base44.auth.verifyOtp({ email, otpCode });
-            if (result?.access_token) {
-                base44.auth.setToken(result.access_token);
-            }
-            window.location.href = safeReturnTo();
-        } catch (err) {
-            setError(err.message || "Invalid verification code");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleResend = async () => {
-        setError("");
-        try {
-            await base44.auth.resendOtp(email);
-            toast({
-                title: "New Verification Code Sent",
-                description: `A new 6-digit code has been sent to ${email}.`,
-            });
-        } catch (err) {
-            setError(err.message || "Failed to resend code");
-        }
-    };
-
-    const handleGoogleAccountSelect = async (account) => {
-        setShowGoogleModal(false);
-        setLoading(true);
-        try {
-            await base44.auth.loginWithProvider("google", safeReturnTo(), account);
-        } catch (err) {
-            setError(err.message || "Failed to sign up with Google");
-            setLoading(false);
-        }
-    };
-
-    if (showOtp) {
-        return (
-            <AuthLayout
-                icon={Mail}
-                title="Verify your Gmail"
-                subtitle={`Check your Gmail inbox (${email}) for your 6-digit code`}
-            >
-                <div className="mb-6 p-4 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 text-center text-xs space-y-1">
-                    <p className="font-semibold text-sm">Verification email sent to Gmail</p>
-                    <p className="text-muted-foreground">Open your Gmail inbox to retrieve your 6-digit code and enter it below.</p>
-                </div>
-
-                {error && (
-                    <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                        {error}
-                    </div>
-                )}
-                <div className="flex justify-center mb-6">
-                    <InputOTP
-                        maxLength={6}
-                        value={otpCode}
-                        onChange={setOtpCode}
-                        autoFocus
-                        autoComplete="one-time-code"
-                    >
-                        <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                    </InputOTP>
-                </div>
-                <Button
-                    className="w-full h-12 font-medium"
-                    onClick={handleVerify}
-                    disabled={loading || otpCode.length < 6}
-                >
-                    {loading ? (
-                        <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Verifying...
-                        </>
-                    ) : (
-                        "Verify & Activate Account"
-                    )}
-                </Button>
-                <p className="text-center text-sm text-muted-foreground mt-4">
-                    Didn't receive the code?{" "}
-                    <button onClick={handleResend} className="text-primary font-medium hover:underline">
-                        Resend Code
-                    </button>
-                </p>
-            </AuthLayout>
-        );
-    }
 
     return (
         <AuthLayout
@@ -152,7 +64,7 @@ export default function Register() {
                 <>
                     Already have an account?{" "}
                     <Link
-                        to={"/login" + (safeReturnTo() !== "/" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "")}
+                        to={"/login" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "")}
                         className="text-primary font-medium hover:underline"
                     >
                         Log in
@@ -160,30 +72,6 @@ export default function Register() {
                 </>
             }
         >
-            <GoogleAccountModal
-                open={showGoogleModal}
-                onClose={() => setShowGoogleModal(false)}
-                onSelectAccount={handleGoogleAccountSelect}
-            />
-
-            <Button
-                variant="outline"
-                className="w-full h-12 text-sm font-medium mb-6"
-                onClick={() => setShowGoogleModal(true)}
-            >
-                <GoogleIcon className="w-5 h-5 mr-2" />
-                Continue with Google
-            </Button>
-
-            <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-3 text-muted-foreground">or</span>
-                </div>
-            </div>
-
             {error && (
                 <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                     {error}
@@ -191,6 +79,33 @@ export default function Register() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                            id="firstName"
+                            type="text"
+                            placeholder="John"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            className="h-12"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                            id="lastName"
+                            type="text"
+                            placeholder="Doe"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            className="h-12"
+                            required
+                        />
+                    </div>
+                </div>
+
                 <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <div className="relative">
@@ -199,8 +114,7 @@ export default function Register() {
                             id="email"
                             type="email"
                             autoComplete="email"
-                            autoFocus
-                            placeholder="you@example.com"
+                            placeholder="john.doe@example.com"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="pl-10 h-12"
@@ -208,6 +122,24 @@ export default function Register() {
                         />
                     </div>
                 </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                        <Input
+                            id="username"
+                            type="text"
+                            autoComplete="username"
+                            placeholder="johndoe"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="pl-10 h-12"
+                            required
+                        />
+                    </div>
+                </div>
+
                 <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
                     <div className="relative">
@@ -224,12 +156,13 @@ export default function Register() {
                         />
                     </div>
                 </div>
+
                 <div className="space-y-2">
-                    <Label htmlFor="confirm">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
                     <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
                         <Input
-                            id="confirm"
+                            id="confirmPassword"
                             type="password"
                             autoComplete="new-password"
                             placeholder="••••••••"
@@ -240,6 +173,7 @@ export default function Register() {
                         />
                     </div>
                 </div>
+
                 <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
                     {loading ? (
                         <>
@@ -247,7 +181,7 @@ export default function Register() {
                             Creating account...
                         </>
                     ) : (
-                        "Create account"
+                        "Create Account"
                     )}
                 </Button>
             </form>

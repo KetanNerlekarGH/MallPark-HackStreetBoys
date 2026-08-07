@@ -153,104 +153,25 @@ async function sendGmailCode(email, code) {
 }
 
 // Resilient base44 export supporting both connected Base44 backend and local standalone dev mode
+// Legacy auth methods - replaced by DummyJSON auth (src/api/authApi.js)
 export const base44 = {
   auth: {
     me: async () => {
-      try {
-        if (appParams.token && appParams.appId) {
-          return await realBase44.auth.me();
-        }
-      } catch (e) {}
-      const rawMock = localStorage.getItem("base44_mock_user");
-      if (rawMock) return JSON.parse(rawMock);
+      const rawUser = localStorage.getItem("auth_user");
+      if (rawUser) return JSON.parse(rawUser);
       const err = new Error("Not authenticated");
       err.status = 401;
       throw err;
     },
-    loginViaEmailPassword: async (email, password) => {
-      try {
-        if (appParams.appBaseUrl && appParams.appId) {
-          return await realBase44.auth.loginViaEmailPassword(email, password);
-        }
-      } catch (e) {}
-      const mockUser = {
-        id: "user_" + Date.now(),
-        email: email || "user@example.com",
-        full_name: email ? email.split("@")[0] : "Demo User"
-      };
-      localStorage.setItem("base44_mock_user", JSON.stringify(mockUser));
-      return mockUser;
-    },
-    loginWithProvider: async (provider, returnTo, customUser) => {
-      try {
-        if (appParams.appBaseUrl && appParams.appId) {
-          return realBase44.auth.loginWithProvider(provider, returnTo);
-        }
-      } catch (e) {}
-      const mockUser = {
-        id: "g_" + Date.now(),
-        email: customUser?.email || "user.google@gmail.com",
-        full_name: customUser?.full_name || (customUser?.email ? customUser.email.split("@")[0] : "Google User"),
-        avatar: customUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(customUser?.email || "Google")}`
-      };
-      localStorage.setItem("base44_mock_user", JSON.stringify(mockUser));
-      window.location.href = returnTo || "/";
-    },
-    register: async ({ email, password }) => {
-      try {
-        if (appParams.appBaseUrl && appParams.appId) {
-          return await realBase44.auth.register({ email, password });
-        }
-      } catch (e) {}
-      // Generate 6-digit code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      localStorage.setItem("smartpark_otp_" + email, code);
-
-      // Dispatch to Gmail inbox via API
-      sendGmailCode(email, code);
-
-      return { success: true, email };
-    },
-    verifyOtp: async ({ email, otpCode }) => {
-      try {
-        if (appParams.appBaseUrl && appParams.appId) {
-          return await realBase44.auth.verifyOtp({ email, otpCode });
-        }
-      } catch (e) {}
-      const storedCode = localStorage.getItem("smartpark_otp_" + email);
-      if (storedCode && otpCode.trim() !== storedCode.trim() && otpCode !== "123456") {
-        const err = new Error(`Incorrect code. Please enter the 6-digit verification code sent to ${email}.`);
-        throw err;
-      }
-      const mockUser = {
-        id: "user_" + Date.now(),
-        email: email || "user@example.com",
-        full_name: email ? email.split("@")[0] : "Verified User"
-      };
-      localStorage.setItem("base44_mock_user", JSON.stringify(mockUser));
-      return { access_token: "mock_token_" + Date.now(), user: mockUser };
-    },
-    resendOtp: async (email) => {
-      try {
-        if (appParams.appBaseUrl && appParams.appId) {
-          return await realBase44.auth.resendOtp(email);
-        }
-      } catch (e) {}
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      localStorage.setItem("smartpark_otp_" + email, code);
-      sendGmailCode(email, code);
-      return { success: true };
-    },
     setToken: (token) => {
       try {
-        localStorage.setItem("token", token);
+        localStorage.setItem("accessToken", token);
       } catch (e) {}
     },
     logout: (redirectUrl) => {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("auth_user");
       localStorage.removeItem("base44_mock_user");
-      try {
-        realBase44.auth.logout();
-      } catch (e) {}
       if (redirectUrl) window.location.href = redirectUrl;
     },
     redirectToLogin: (returnTo) => {
