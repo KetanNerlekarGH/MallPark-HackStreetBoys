@@ -16,6 +16,7 @@ import Layout from '@/components/Layout';
 import Dashboard from '@/pages/Dashboard';
 import Analytics from '@/pages/Analytics';
 import Reservations from '@/pages/Reservations';
+import PuneMallsPage from '@/pages/PuneMallsPage';
 
 const AuthenticatedApp = () => {
     const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,6 +45,7 @@ const AuthenticatedApp = () => {
             <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
                 <Route element={<Layout />}>
                     <Route path="/" element={<Dashboard />} />
+                    <Route path="/malls" element={<PuneMallsPage />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/reservations" element={<Reservations />} />
                 </Route>

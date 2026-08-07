@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
-import { CircleParking, LayoutDashboard, BarChart3, Ticket } from "lucide-react";
+import { CircleParking, LayoutDashboard, BarChart3, Ticket, Building2 } from "lucide-react";
 import ProfileMenu from "@/components/ProfileMenu";
 import ThemeToggle from "@/components/ThemeToggle";
 import AIChatWidget from "@/components/parking/AIChatWidget";
@@ -10,6 +10,7 @@ export default function Layout() {
 
   const navItems = [
     { label: "Dashboard", path: "/", icon: LayoutDashboard },
+    { label: "Pune Malls 3D", path: "/malls", icon: Building2 },
     { label: "Analytics", path: "/analytics", icon: BarChart3 },
     { label: "Reservations", path: "/reservations", icon: Ticket },
   ];
