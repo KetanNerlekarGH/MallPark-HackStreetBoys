@@ -56,15 +56,7 @@ export default function Login() {
                 </>
             }
         >
-            <div className="mb-4 p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 text-xs flex items-start gap-2">
-                <Info className="w-4 h-4 mt-0.5 shrink-0" />
-                <div className="flex-1 space-y-1">
-                    <p className="font-semibold">DummyJSON Auth Demo Credentials:</p>
-                    <p className="text-muted-foreground">
-                        Use <button type="button" onClick={() => handleFillDemo("emilys", "emilyspass")} className="font-mono text-primary underline font-bold">emilys / emilyspass</button> or any account you created on the Sign Up page.
-                    </p>
-                </div>
-            </div>
+
 
             {error && (
                 <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
