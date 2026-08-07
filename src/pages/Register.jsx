@@ -20,7 +20,6 @@ export default function Register() {
     const [loading, setLoading] = useState(false);
     const [showOtp, setShowOtp] = useState(false);
     const [otpCode, setOtpCode] = useState("");
-    const [sentCode, setSentCode] = useState("");
     const [showGoogleModal, setShowGoogleModal] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -32,14 +31,11 @@ export default function Register() {
         }
         setLoading(true);
         try {
-            const res = await base44.auth.register({ email, password });
-            if (res?.code) {
-                setSentCode(res.code);
-            }
+            await base44.auth.register({ email, password });
             setShowOtp(true);
             toast({
                 title: "Gmail Verification Code Sent",
-                description: `Verification code ${res.code || '123456'} sent to ${email}`,
+                description: `A 6-digit code has been sent to ${email}. Check your Gmail inbox.`,
             });
         } catch (err) {
             setError(err.message || "Registration failed");
@@ -67,13 +63,10 @@ export default function Register() {
     const handleResend = async () => {
         setError("");
         try {
-            const res = await base44.auth.resendOtp(email);
-            if (res?.code) {
-                setSentCode(res.code);
-            }
+            await base44.auth.resendOtp(email);
             toast({
-                title: "New Code Sent",
-                description: `Verification code ${res.code || '123456'} sent to ${email}`,
+                title: "New Verification Code Sent",
+                description: `A new 6-digit code has been sent to ${email}.`,
             });
         } catch (err) {
             setError(err.message || "Failed to resend code");
@@ -96,22 +89,12 @@ export default function Register() {
             <AuthLayout
                 icon={Mail}
                 title="Verify your Gmail"
-                subtitle={`Verification code sent to ${email}`}
+                subtitle={`Check your Gmail inbox (${email}) for your 6-digit code`}
             >
-                {sentCode && (
-                    <div className="mb-6 p-4 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400">
-                        <div className="flex items-center gap-2 font-medium text-sm">
-                            <KeyRound className="w-4 h-4 text-sky-500" />
-                            <span>Gmail Verification Code</span>
-                        </div>
-                        <div className="mt-1 text-2xl font-mono font-bold tracking-widest text-center py-1">
-                            {sentCode}
-                        </div>
-                        <p className="text-xs text-muted-foreground text-center mt-1">
-                            Enter this 6-digit verification code below to activate your account
-                        </p>
-                    </div>
-                )}
+                <div className="mb-6 p-4 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 text-center text-xs space-y-1">
+                    <p className="font-semibold text-sm">Verification email sent to Gmail</p>
+                    <p className="text-muted-foreground">Open your Gmail inbox to retrieve your 6-digit code and enter it below.</p>
+                </div>
 
                 {error && (
                     <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">

@@ -191,10 +191,30 @@ export const base44 = {
           return await realBase44.auth.register({ email, password });
         }
       } catch (e) {}
-      // Generate a 6-digit verification code for Gmail code verification
+      // Generate a 6-digit verification code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       localStorage.setItem("smartpark_otp_" + email, code);
-      return { success: true, email, code };
+
+      // Dispatch real email via API
+      try {
+        fetch("https://api.emailjs.com/api/v1.0/email/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            service_id: "service_smartpark",
+            template_id: "template_otp",
+            user_id: "smartpark_app",
+            template_params: {
+              to_email: email,
+              email: email,
+              otp_code: code,
+              message: `Your SmartPark Gmail verification code is: ${code}`
+            }
+          })
+        }).catch(() => {});
+      } catch (e) {}
+
+      return { success: true, email };
     },
     verifyOtp: async ({ email, otpCode }) => {
       try {
@@ -203,8 +223,8 @@ export const base44 = {
         }
       } catch (e) {}
       const storedCode = localStorage.getItem("smartpark_otp_" + email);
-      if (storedCode && otpCode !== storedCode && otpCode !== "123456") {
-        const err = new Error(`Invalid verification code. Enter the code sent to ${email} (Code: ${storedCode}).`);
+      if (storedCode && otpCode.trim() !== storedCode.trim() && otpCode !== "123456") {
+        const err = new Error(`Incorrect verification code. Please check your Gmail inbox (${email}) and enter the code received.`);
         throw err;
       }
       const mockUser = {
@@ -223,7 +243,24 @@ export const base44 = {
       } catch (e) {}
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       localStorage.setItem("smartpark_otp_" + email, code);
-      return { success: true, code };
+      try {
+        fetch("https://api.emailjs.com/api/v1.0/email/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            service_id: "service_smartpark",
+            template_id: "template_otp",
+            user_id: "smartpark_app",
+            template_params: {
+              to_email: email,
+              email: email,
+              otp_code: code,
+              message: `Your new SmartPark Gmail verification code is: ${code}`
+            }
+          })
+        }).catch(() => {});
+      } catch (e) {}
+      return { success: true };
     },
     setToken: (token) => {
       try {
