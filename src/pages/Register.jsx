@@ -4,10 +4,11 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, CheckCircle2, KeyRound } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import GoogleAccountModal from "@/components/GoogleAccountModal";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
 
@@ -19,6 +20,8 @@ export default function Register() {
     const [loading, setLoading] = useState(false);
     const [showOtp, setShowOtp] = useState(false);
     const [otpCode, setOtpCode] = useState("");
+    const [sentCode, setSentCode] = useState("");
+    const [showGoogleModal, setShowGoogleModal] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -29,8 +32,15 @@ export default function Register() {
         }
         setLoading(true);
         try {
-            await base44.auth.register({ email, password });
+            const res = await base44.auth.register({ email, password });
+            if (res?.code) {
+                setSentCode(res.code);
+            }
             setShowOtp(true);
+            toast({
+                title: "Gmail Verification Code Sent",
+                description: `Verification code ${res.code || '123456'} sent to ${email}`,
+            });
         } catch (err) {
             setError(err.message || "Registration failed");
         } finally {
@@ -57,27 +67,52 @@ export default function Register() {
     const handleResend = async () => {
         setError("");
         try {
-            await base44.auth.resendOtp(email);
+            const res = await base44.auth.resendOtp(email);
+            if (res?.code) {
+                setSentCode(res.code);
+            }
             toast({
-                title: "Code sent",
-                description: "Check your email for the new code.",
+                title: "New Code Sent",
+                description: `Verification code ${res.code || '123456'} sent to ${email}`,
             });
         } catch (err) {
             setError(err.message || "Failed to resend code");
         }
     };
 
-    const handleGoogle = () => {
-        base44.auth.loginWithProvider("google", safeReturnTo());
+    const handleGoogleAccountSelect = async (account) => {
+        setShowGoogleModal(false);
+        setLoading(true);
+        try {
+            await base44.auth.loginWithProvider("google", safeReturnTo(), account);
+        } catch (err) {
+            setError(err.message || "Failed to sign up with Google");
+            setLoading(false);
+        }
     };
 
     if (showOtp) {
         return (
             <AuthLayout
                 icon={Mail}
-                title="Verify your email"
-                subtitle={`We sent a code to ${email}`}
+                title="Verify your Gmail"
+                subtitle={`Verification code sent to ${email}`}
             >
+                {sentCode && (
+                    <div className="mb-6 p-4 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400">
+                        <div className="flex items-center gap-2 font-medium text-sm">
+                            <KeyRound className="w-4 h-4 text-sky-500" />
+                            <span>Gmail Verification Code</span>
+                        </div>
+                        <div className="mt-1 text-2xl font-mono font-bold tracking-widest text-center py-1">
+                            {sentCode}
+                        </div>
+                        <p className="text-xs text-muted-foreground text-center mt-1">
+                            Enter this 6-digit verification code below to activate your account
+                        </p>
+                    </div>
+                )}
+
                 {error && (
                     <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                         {error}
@@ -112,13 +147,13 @@ export default function Register() {
                             Verifying...
                         </>
                     ) : (
-                        "Verify"
+                        "Verify & Activate Account"
                     )}
                 </Button>
                 <p className="text-center text-sm text-muted-foreground mt-4">
                     Didn't receive the code?{" "}
                     <button onClick={handleResend} className="text-primary font-medium hover:underline">
-                        Resend
+                        Resend Code
                     </button>
                 </p>
             </AuthLayout>
@@ -142,10 +177,16 @@ export default function Register() {
                 </>
             }
         >
+            <GoogleAccountModal
+                open={showGoogleModal}
+                onClose={() => setShowGoogleModal(false)}
+                onSelectAccount={handleGoogleAccountSelect}
+            />
+
             <Button
                 variant="outline"
                 className="w-full h-12 text-sm font-medium mb-6"
-                onClick={handleGoogle}
+                onClick={() => setShowGoogleModal(true)}
             >
                 <GoogleIcon className="w-5 h-5 mr-2" />
                 Continue with Google

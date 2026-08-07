@@ -13,70 +13,71 @@ export const realBase44 = createClient({
   appBaseUrl
 });
 
-// Local mock storage helpers
-const MOCK_SLOTS_KEY = "smartpark_mock_slots";
-const MOCK_RESERVATIONS_KEY = "smartpark_mock_reservations";
+// Local mock storage keys
+const MOCK_SLOTS_KEY = "smartpark_mock_slots_v3";
+const MOCK_RESERVATIONS_KEY = "smartpark_mock_reservations_v3";
 
+// 3 Levels of parking with 16 spacious slots per level (48 slots total across Zone A & Zone B)
 const initialSlots = [
-  // Floor 1 (Level 1 - Ground Floor)
-  { id: "1", code: "A-101", floor: 1, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "2", code: "A-102", floor: 1, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "3", code: "A-103", floor: 1, vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "4", code: "A-104", floor: 1, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "5", code: "A-105", floor: 1, vehicle_type: "car", is_ev: true, status: "occupied" },
-  { id: "6", code: "A-106", floor: 1, vehicle_type: "car", is_ev: false, status: "reserved" },
-  { id: "7", code: "A-107", floor: 1, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "8", code: "A-108", floor: 1, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "9", code: "A-109", floor: 1, vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "10", code: "A-110", floor: 1, vehicle_type: "car", is_ev: true, status: "available" },
+  // LEVEL 1 (Ground Floor - 16 Slots)
+  // Zone A
+  { id: "1", code: "A-101", floor: 1, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "2", code: "A-102", floor: 1, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "3", code: "A-103", floor: 1, zone: "A", vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "4", code: "A-104", floor: 1, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "5", code: "A-105", floor: 1, zone: "A", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "6", code: "A-106", floor: 1, zone: "A", vehicle_type: "car", is_ev: false, status: "reserved" },
+  { id: "7", code: "A-107", floor: 1, zone: "A", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "8", code: "A-108", floor: 1, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
+  // Zone B
+  { id: "9", code: "A-109", floor: 1, zone: "B", vehicle_type: "car", is_ev: true, status: "occupied" },
+  { id: "10", code: "A-110", floor: 1, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "11", code: "A-111", floor: 1, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "12", code: "A-112", floor: 1, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "13", code: "A-113", floor: 1, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "14", code: "A-114", floor: 1, zone: "B", vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "15", code: "A-115", floor: 1, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "16", code: "A-116", floor: 1, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
 
-  // Floor 2 (Level 2)
-  { id: "11", code: "B-201", floor: 2, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "12", code: "B-202", floor: 2, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "13", code: "B-203", floor: 2, vehicle_type: "bike", is_ev: false, status: "occupied" },
-  { id: "14", code: "B-204", floor: 2, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "15", code: "B-205", floor: 2, vehicle_type: "car", is_ev: false, status: "reserved" },
-  { id: "16", code: "B-206", floor: 2, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "17", code: "B-207", floor: 2, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "18", code: "B-208", floor: 2, vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "19", code: "B-209", floor: 2, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "20", code: "B-210", floor: 2, vehicle_type: "bike", is_ev: false, status: "available" },
+  // LEVEL 2 (Central Deck - 16 Slots)
+  // Zone A
+  { id: "17", code: "B-201", floor: 2, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "18", code: "B-202", floor: 2, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "19", code: "B-203", floor: 2, zone: "A", vehicle_type: "bike", is_ev: false, status: "occupied" },
+  { id: "20", code: "B-204", floor: 2, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "21", code: "B-205", floor: 2, zone: "A", vehicle_type: "car", is_ev: false, status: "reserved" },
+  { id: "22", code: "B-206", floor: 2, zone: "A", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "23", code: "B-207", floor: 2, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "24", code: "B-208", floor: 2, zone: "A", vehicle_type: "car", is_ev: false, status: "occupied" },
+  // Zone B
+  { id: "25", code: "B-209", floor: 2, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "26", code: "B-210", floor: 2, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "27", code: "B-211", floor: 2, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "28", code: "B-212", floor: 2, zone: "B", vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "29", code: "B-213", floor: 2, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "30", code: "B-214", floor: 2, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "31", code: "B-215", floor: 2, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "32", code: "B-216", floor: 2, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
 
-  // Floor 3 (Level 3)
-  { id: "21", code: "C-301", floor: 3, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "22", code: "C-302", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "23", code: "C-303", floor: 3, vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "24", code: "C-304", floor: 3, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "25", code: "C-305", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "26", code: "C-306", floor: 3, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "27", code: "C-307", floor: 3, vehicle_type: "bike", is_ev: false, status: "occupied" },
-  { id: "28", code: "C-308", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "29", code: "C-309", floor: 3, vehicle_type: "car", is_ev: true, status: "occupied" },
-  { id: "30", code: "C-310", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
-
-  // Floor 4 (Level 4 - VIP & EV Zone)
-  { id: "31", code: "D-401", floor: 4, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "32", code: "D-402", floor: 4, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "33", code: "D-403", floor: 4, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "34", code: "D-404", floor: 4, vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "35", code: "D-405", floor: 4, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "36", code: "D-406", floor: 4, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "37", code: "D-407", floor: 4, vehicle_type: "car", is_ev: false, status: "reserved" },
-  { id: "38", code: "D-408", floor: 4, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "39", code: "D-409", floor: 4, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "40", code: "D-410", floor: 4, vehicle_type: "car", is_ev: false, status: "available" },
-
-  // Floor 5 (Level 5 - Rooftop)
-  { id: "41", code: "E-501", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "42", code: "E-502", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "43", code: "E-503", floor: 5, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "44", code: "E-504", floor: 5, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "45", code: "E-505", floor: 5, vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "46", code: "E-506", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "47", code: "E-507", floor: 5, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "48", code: "E-508", floor: 5, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "49", code: "E-509", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "50", code: "E-510", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
+  // LEVEL 3 (Executive & EV Deck - 16 Slots)
+  // Zone A
+  { id: "33", code: "C-301", floor: 3, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "34", code: "C-302", floor: 3, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "35", code: "C-303", floor: 3, zone: "A", vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "36", code: "C-304", floor: 3, zone: "A", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "37", code: "C-305", floor: 3, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "38", code: "C-306", floor: 3, zone: "A", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "39", code: "C-307", floor: 3, zone: "A", vehicle_type: "bike", is_ev: false, status: "occupied" },
+  { id: "40", code: "C-308", floor: 3, zone: "A", vehicle_type: "car", is_ev: false, status: "available" },
+  // Zone B
+  { id: "41", code: "C-309", floor: 3, zone: "B", vehicle_type: "car", is_ev: true, status: "occupied" },
+  { id: "42", code: "C-310", floor: 3, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "43", code: "C-311", floor: 3, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "44", code: "C-312", floor: 3, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "45", code: "C-313", floor: 3, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "46", code: "C-314", floor: 3, zone: "B", vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "47", code: "C-315", floor: 3, zone: "B", vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "48", code: "C-316", floor: 3, zone: "B", vehicle_type: "car", is_ev: true, status: "available" },
 ];
 
 const initialReservations = [
@@ -109,10 +110,7 @@ const initialReservations = [
 function getStoredSlots() {
   try {
     const raw = localStorage.getItem(MOCK_SLOTS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.length >= 50) return parsed;
-    }
+    if (raw) return JSON.parse(raw);
     localStorage.setItem(MOCK_SLOTS_KEY, JSON.stringify(initialSlots));
     return initialSlots;
   } catch (e) {
@@ -172,7 +170,7 @@ export const base44 = {
       localStorage.setItem("base44_mock_user", JSON.stringify(mockUser));
       return mockUser;
     },
-    loginWithProvider: async (provider, returnTo) => {
+    loginWithProvider: async (provider, returnTo, customUser) => {
       try {
         if (appParams.appBaseUrl && appParams.appId) {
           return realBase44.auth.loginWithProvider(provider, returnTo);
@@ -180,9 +178,9 @@ export const base44 = {
       } catch (e) {}
       const mockUser = {
         id: "g_" + Date.now(),
-        email: "alex.demo@gmail.com",
-        full_name: "Alex Demo",
-        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex"
+        email: customUser?.email || "alex.demo@gmail.com",
+        full_name: customUser?.full_name || (customUser?.email ? customUser.email.split("@")[0] : "Google User"),
+        avatar: customUser?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(customUser?.email || "Google")}`
       };
       localStorage.setItem("base44_mock_user", JSON.stringify(mockUser));
       window.location.href = returnTo || "/";
@@ -193,7 +191,10 @@ export const base44 = {
           return await realBase44.auth.register({ email, password });
         }
       } catch (e) {}
-      return { success: true, email };
+      // Generate a 6-digit verification code for Gmail code verification
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      localStorage.setItem("smartpark_otp_" + email, code);
+      return { success: true, email, code };
     },
     verifyOtp: async ({ email, otpCode }) => {
       try {
@@ -201,10 +202,15 @@ export const base44 = {
           return await realBase44.auth.verifyOtp({ email, otpCode });
         }
       } catch (e) {}
+      const storedCode = localStorage.getItem("smartpark_otp_" + email);
+      if (storedCode && otpCode !== storedCode && otpCode !== "123456") {
+        const err = new Error(`Invalid verification code. Enter the code sent to ${email} (Code: ${storedCode}).`);
+        throw err;
+      }
       const mockUser = {
         id: "user_" + Date.now(),
         email: email || "user@example.com",
-        full_name: email ? email.split("@")[0] : "Demo User"
+        full_name: email ? email.split("@")[0] : "Verified User"
       };
       localStorage.setItem("base44_mock_user", JSON.stringify(mockUser));
       return { access_token: "mock_token_" + Date.now(), user: mockUser };
@@ -215,21 +221,14 @@ export const base44 = {
           return await realBase44.auth.resendOtp(email);
         }
       } catch (e) {}
-      return { success: true };
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      localStorage.setItem("smartpark_otp_" + email, code);
+      return { success: true, code };
     },
     setToken: (token) => {
       try {
         localStorage.setItem("token", token);
       } catch (e) {}
-    },
-    registerViaEmailPassword: async (email, password) => {
-      const mockUser = {
-        id: "user_" + Date.now(),
-        email: email || "user@example.com",
-        full_name: email ? email.split("@")[0] : "Demo User"
-      };
-      localStorage.setItem("base44_mock_user", JSON.stringify(mockUser));
-      return mockUser;
     },
     logout: (redirectUrl) => {
       localStorage.removeItem("base44_mock_user");
@@ -336,11 +335,11 @@ export const base44 = {
         }
       } catch (e) {}
       const q = (payload?.question || "").toLowerCase();
-      let answer = "I am your AI Parking Assistant! You can check spot availability on the Dashboard or view active bookings under Reservations.";
+      let answer = "I am your AI Parking Assistant! You can check spot availability across Level 1, 2 & 3 on the Dashboard or view active bookings under Reservations.";
       if (q.includes("cancel")) {
         answer = "To cancel a reservation, open the Reservations tab and click 'Cancel Booking' on your active reservation.";
       } else if (q.includes("ev") || q.includes("charging")) {
-        answer = "EV charging bays (marked with ⚡) are located on Levels 1, 2, and 3. Use the EV filter on the Dashboard to find free spots.";
+        answer = "EV charging bays (marked with ⚡) are located in Zone A & B across Levels 1, 2, and 3. Use the EV filter on the Dashboard to find free spots.";
       } else if (q.includes("fee") || q.includes("cost") || q.includes("rate") || q.includes("price") || q.includes("calculat")) {
         answer = "Parking fees are ₹60/hour for standard slots and ₹80/hour for EV charging bays.";
       } else if (q.includes("extend")) {
