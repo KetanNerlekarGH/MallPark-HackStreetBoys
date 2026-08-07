@@ -18,6 +18,7 @@ const MOCK_SLOTS_KEY = "smartpark_mock_slots";
 const MOCK_RESERVATIONS_KEY = "smartpark_mock_reservations";
 
 const initialSlots = [
+  // Floor 1 (Level 1 - Ground Floor)
   { id: "1", code: "A-101", floor: 1, vehicle_type: "car", is_ev: true, status: "available" },
   { id: "2", code: "A-102", floor: 1, vehicle_type: "car", is_ev: false, status: "available" },
   { id: "3", code: "A-103", floor: 1, vehicle_type: "car", is_ev: false, status: "occupied" },
@@ -26,24 +27,56 @@ const initialSlots = [
   { id: "6", code: "A-106", floor: 1, vehicle_type: "car", is_ev: false, status: "reserved" },
   { id: "7", code: "A-107", floor: 1, vehicle_type: "bike", is_ev: false, status: "available" },
   { id: "8", code: "A-108", floor: 1, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "9", code: "A-109", floor: 1, vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "10", code: "A-110", floor: 1, vehicle_type: "car", is_ev: true, status: "available" },
 
-  { id: "9", code: "B-201", floor: 2, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "10", code: "B-202", floor: 2, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "11", code: "B-203", floor: 2, vehicle_type: "bike", is_ev: false, status: "occupied" },
-  { id: "12", code: "B-204", floor: 2, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "13", code: "B-205", floor: 2, vehicle_type: "car", is_ev: false, status: "reserved" },
-  { id: "14", code: "B-206", floor: 2, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "15", code: "B-207", floor: 2, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "16", code: "B-208", floor: 2, vehicle_type: "car", is_ev: false, status: "occupied" },
+  // Floor 2 (Level 2)
+  { id: "11", code: "B-201", floor: 2, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "12", code: "B-202", floor: 2, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "13", code: "B-203", floor: 2, vehicle_type: "bike", is_ev: false, status: "occupied" },
+  { id: "14", code: "B-204", floor: 2, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "15", code: "B-205", floor: 2, vehicle_type: "car", is_ev: false, status: "reserved" },
+  { id: "16", code: "B-206", floor: 2, vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "17", code: "B-207", floor: 2, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "18", code: "B-208", floor: 2, vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "19", code: "B-209", floor: 2, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "20", code: "B-210", floor: 2, vehicle_type: "bike", is_ev: false, status: "available" },
 
-  { id: "17", code: "C-301", floor: 3, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "18", code: "C-302", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "19", code: "C-303", floor: 3, vehicle_type: "car", is_ev: false, status: "occupied" },
-  { id: "20", code: "C-304", floor: 3, vehicle_type: "bike", is_ev: false, status: "available" },
-  { id: "21", code: "C-305", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
-  { id: "22", code: "C-306", floor: 3, vehicle_type: "car", is_ev: true, status: "available" },
-  { id: "23", code: "C-307", floor: 3, vehicle_type: "bike", is_ev: false, status: "occupied" },
-  { id: "24", code: "C-308", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
+  // Floor 3 (Level 3)
+  { id: "21", code: "C-301", floor: 3, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "22", code: "C-302", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "23", code: "C-303", floor: 3, vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "24", code: "C-304", floor: 3, vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "25", code: "C-305", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "26", code: "C-306", floor: 3, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "27", code: "C-307", floor: 3, vehicle_type: "bike", is_ev: false, status: "occupied" },
+  { id: "28", code: "C-308", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "29", code: "C-309", floor: 3, vehicle_type: "car", is_ev: true, status: "occupied" },
+  { id: "30", code: "C-310", floor: 3, vehicle_type: "car", is_ev: false, status: "available" },
+
+  // Floor 4 (Level 4 - VIP & EV Zone)
+  { id: "31", code: "D-401", floor: 4, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "32", code: "D-402", floor: 4, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "33", code: "D-403", floor: 4, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "34", code: "D-404", floor: 4, vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "35", code: "D-405", floor: 4, vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "36", code: "D-406", floor: 4, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "37", code: "D-407", floor: 4, vehicle_type: "car", is_ev: false, status: "reserved" },
+  { id: "38", code: "D-408", floor: 4, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "39", code: "D-409", floor: 4, vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "40", code: "D-410", floor: 4, vehicle_type: "car", is_ev: false, status: "available" },
+
+  // Floor 5 (Level 5 - Rooftop)
+  { id: "41", code: "E-501", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "42", code: "E-502", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "43", code: "E-503", floor: 5, vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "44", code: "E-504", floor: 5, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "45", code: "E-505", floor: 5, vehicle_type: "car", is_ev: false, status: "occupied" },
+  { id: "46", code: "E-506", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "47", code: "E-507", floor: 5, vehicle_type: "bike", is_ev: false, status: "available" },
+  { id: "48", code: "E-508", floor: 5, vehicle_type: "car", is_ev: true, status: "available" },
+  { id: "49", code: "E-509", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
+  { id: "50", code: "E-510", floor: 5, vehicle_type: "car", is_ev: false, status: "available" },
 ];
 
 const initialReservations = [
@@ -76,7 +109,10 @@ const initialReservations = [
 function getStoredSlots() {
   try {
     const raw = localStorage.getItem(MOCK_SLOTS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.length >= 50) return parsed;
+    }
     localStorage.setItem(MOCK_SLOTS_KEY, JSON.stringify(initialSlots));
     return initialSlots;
   } catch (e) {
