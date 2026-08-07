@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { CircleParking, LayoutDashboard, BarChart3, Ticket } from "lucide-react";
 import ProfileMenu from "@/components/ProfileMenu";
+import ThemeToggle from "@/components/ThemeToggle";
 import AIChatWidget from "@/components/parking/AIChatWidget";
 
 export default function Layout() {
@@ -48,7 +49,8 @@ export default function Layout() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
             <ProfileMenu />
           </div>
         </div>
