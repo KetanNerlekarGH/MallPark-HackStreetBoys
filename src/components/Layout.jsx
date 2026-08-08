@@ -25,7 +25,7 @@ export default function Layout() {
               <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
                 <CircleParking className="w-5 h-5" />
               </div>
-              <span className="font-bold text-lg tracking-tight">SmartPark</span>
+              <span className="font-bold text-lg tracking-tight">MallPark</span>
             </Link>
 
             <nav className="hidden md:flex gap-1">
@@ -36,11 +36,10 @@ export default function Layout() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
+                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
                         ? "bg-secondary text-secondary-foreground font-semibold"
                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     {item.label}
@@ -65,11 +64,10 @@ export default function Layout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center gap-1 text-xs py-1 px-3 rounded-lg transition-colors ${
-                  isActive
+                className={`flex flex-col items-center gap-1 text-xs py-1 px-3 rounded-lg transition-colors ${isActive
                     ? "text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 <Icon className="w-5 h-5" />
                 {item.label}
