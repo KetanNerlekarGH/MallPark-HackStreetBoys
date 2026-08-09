@@ -93,24 +93,24 @@ export default function AuthLayout({ title, subtitle, footer, children, phrases 
           <div>
             {/* Top Brand Logo */}
             <div className="flex items-center justify-between mb-6">
-              <Link to="/" className="flex items-center gap-2.5 group">
-                <div className="w-8 h-8 rounded-xl overflow-hidden bg-purple-500/10 border border-purple-500/30 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.35)] transition-transform duration-300 group-hover:scale-105">
+              <Link to="/" className="flex items-center gap-3 group">
+                <div className="w-9 h-9 rounded-2xl overflow-hidden bg-[#170a35] border border-purple-500/50 p-1 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.45)] transition-transform duration-300 group-hover:scale-105">
                   <img
                     src="/logo.png"
                     alt="MallPark Logo"
-                    className="w-full h-full object-contain mix-blend-lighten"
+                    className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]"
                   />
                 </div>
-                <span className="font-extrabold text-lg tracking-tight text-white group-hover:text-purple-200 transition-colors">
+                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-purple-100 to-indigo-200 bg-clip-text text-transparent group-hover:text-purple-200 transition-colors">
                   MallPark
                 </span>
               </Link>
             </div>
 
-            {/* User Avatar Circle Badge with Neon Purple Glow */}
+            {/* User Account Avatar Hero Badge */}
             <div className="text-center my-4">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#170a35] text-purple-300 flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.4)] mx-auto mb-4 border-2 border-purple-500/50 transition-transform hover:scale-105">
-                <User className="w-8 h-8 sm:w-10 sm:h-10 text-purple-200 stroke-[2.2]" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#1c0c42] via-[#12072e] to-[#090317] text-purple-300 flex items-center justify-center shadow-[0_0_35px_rgba(168,85,247,0.55)] mx-auto mb-4 border-2 border-purple-500/60 transition-transform duration-300 hover:scale-105">
+                <User className="w-8 h-8 sm:w-10 sm:h-10 text-purple-200 stroke-[2.2] filter drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
               </div>
             </div>
 

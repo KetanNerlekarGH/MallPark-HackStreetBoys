@@ -43,14 +43,14 @@ export default function Layout() {
             <HamburgerMenuDrawer />
 
             <Link to="/" className="flex items-center space-x-2.5 group shrink-0">
-              <div className="w-9 h-9 rounded-xl overflow-hidden bg-purple-500/10 dark:bg-purple-950/40 border border-purple-500/30 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-transform group-hover:scale-105">
+              <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#170a35] border border-purple-500/50 p-1 flex items-center justify-center shadow-[0_0_18px_rgba(168,85,247,0.4)] transition-transform group-hover:scale-105">
                 <img
                   src="/logo.png"
                   alt="MallPark Logo"
-                  className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-lighten"
+                  className="w-full h-full object-contain filter drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]"
                 />
               </div>
-              <span className="font-bold text-lg tracking-tight text-foreground dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-200 transition-colors hidden sm:inline">
+              <span className="font-extrabold text-lg tracking-tight text-foreground dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-200 transition-colors hidden sm:inline">
                 MallPark
               </span>
             </Link>

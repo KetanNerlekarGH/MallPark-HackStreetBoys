@@ -21,7 +21,7 @@ export default function FloorLayout({ slots, onSelect }) {
           <Navigation className="w-4 h-4 text-purple-400 animate-pulse" />
           <span className="font-bold uppercase tracking-wider text-white">Interactive Floor Map Layout</span>
         </div>
-        
+
         {/* Map Legend Items */}
         <div className="flex flex-wrap items-center gap-4 text-[11px] text-purple-200/80">
           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
@@ -91,7 +91,7 @@ export default function FloorLayout({ slots, onSelect }) {
       <div className="space-y-8">
         {zones.map((zone, idx) => (
           <div key={zone} className="space-y-3">
-            
+
             {/* Zone Header */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
@@ -147,7 +147,7 @@ export default function FloorLayout({ slots, onSelect }) {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-sm text-white tracking-wide uppercase">EXPRESS EXIT GATE B</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40">Auto FastTag Payment</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/40">Auto MallTag Payment</span>
             </div>
             <p className="text-[11px] text-rose-200/70 font-mono">South Outflow Ramp · Automatic Toll & Ticket Settlement</p>
           </div>

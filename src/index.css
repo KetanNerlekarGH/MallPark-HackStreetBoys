@@ -193,3 +193,34 @@
 .btn-shimmer-effect:hover::after {
     animation: shimmerSweep 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+@property --border-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes spinBorderAngle {
+    0% {
+        --border-angle: 0deg;
+    }
+    100% {
+        --border-angle: 360deg;
+    }
+}
+
+.animated-purple-border-wrapper {
+    position: relative;
+    border-radius: 1.5rem;
+    padding: 2px;
+    background: conic-gradient(
+        from var(--border-angle),
+        rgba(168, 85, 247, 0.1) 0%,
+        rgba(168, 85, 247, 0.15) 60%,
+        #c084fc 82%,
+        #ffffff 92%,
+        #a855f7 97%,
+        rgba(168, 85, 247, 0.1) 100%
+    );
+    animation: spinBorderAngle 3.5s linear infinite;
+}

@@ -36,11 +36,11 @@ export default function HamburgerMenuDrawer() {
           {/* Top Brand Header & Close Button */}
           <div className="flex items-center justify-between border-b border-purple-900/40 pb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl overflow-hidden bg-purple-500/10 border border-purple-500/30 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.35)]">
+              <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#170a35] border border-purple-500/50 p-1 flex items-center justify-center shadow-[0_0_18px_rgba(168,85,247,0.4)]">
                 <img
                   src="/logo.png"
                   alt="MallPark Logo"
-                  className="w-full h-full object-contain mix-blend-lighten"
+                  className="w-full h-full object-contain filter drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]"
                 />
               </div>
               <span className="font-extrabold text-lg tracking-tight text-white">
@@ -59,7 +59,7 @@ export default function HamburgerMenuDrawer() {
           <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-500/30 font-mono text-xs text-purple-200/90 flex items-center gap-2">
             <Building2 className="w-4 h-4 text-purple-400 shrink-0" />
             <div className="truncate">
-              <div className="text-[10px] text-purple-300/60 uppercase">Selected Hub</div>
+              <div className="text-[10px] text-purple-300/60 uppercase">You are at</div>
               <div className="font-bold text-white truncate">{selectedMall?.name || "Phoenix Marketcity"}</div>
             </div>
           </div>

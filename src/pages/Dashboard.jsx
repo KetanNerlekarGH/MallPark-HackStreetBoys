@@ -81,6 +81,8 @@ export default function Dashboard() {
     const evFree = floorSlots.filter((s) => s.is_ev && s.status === "available").length;
 
     const reserve = async ({ slot, hours, vehicleNumber, fee }) => {
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + hours * 3600 * 1000);
         await base44.entities.Reservation.create({
             slot_code: slot.code,
             floor: slot.floor,
@@ -90,6 +92,8 @@ export default function Dashboard() {
             estimated_fee: fee,
             is_ev: !!slot.is_ev,
             status: "active",
+            created_at: now.toISOString(),
+            expires_at: expiresAt.toISOString(),
         });
         await base44.entities.ParkingSlot.update(slot.id, { status: "reserved" });
         setSlots((prev) => prev.map((s) => (s.id === slot.id ? { ...s, status: "reserved" } : s)));
@@ -97,16 +101,24 @@ export default function Dashboard() {
         toast({ title: `Slot ${slot.code} reserved`, description: `Estimated fee ₹${fee}` });
     };
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour >= 5 && hour < 12) return "Good Morning.";
+        if (hour >= 12 && hour < 17) return "Good Afternoon.";
+        if (hour >= 17 && hour < 22) return "Good Evening.";
+
+    };
+
     return (
         <div className="space-y-10 animate-fade-in-up">
             <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-300 text-[11px] font-mono tracking-widest uppercase mb-3 shadow-sm dark:shadow-[0_0_12px_rgba(168,85,247,0.2)]">
-                    <span className="w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
-                    Live Parking · {selectedState} &gt; {selectedCity} &gt; {selectedMall?.name}
+                <div className="flex items-center gap-2 text-xs font-mono tracking-widest uppercase text-purple-600 dark:text-purple-300/80 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                    <span>{selectedState} &gt; {selectedCity} &gt; {selectedMall?.name}</span>
                 </div>
                 <div className="min-h-[3.2rem] sm:min-h-[3.8rem] flex items-center">
                     <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:via-purple-100 dark:to-indigo-200 dark:bg-clip-text">
-                        Welcome to {mallName}, <span className="text-purple-700 dark:text-purple-300 font-bold">{username}</span>
+                        {getGreeting()} Welcome to {mallName}, <span className="text-purple-700 dark:text-purple-300 font-bold">{username}</span>
                     </h1>
                 </div>
             </div>

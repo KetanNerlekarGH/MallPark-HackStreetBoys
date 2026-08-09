@@ -16,8 +16,29 @@ export default function Reservations() {
     const { toast } = useToast();
 
     const load = () =>
-        base44.entities.Reservation.list("-created_date", 200).then((d) => {
-            setItems(d);
+        base44.entities.Reservation.list("-created_date", 200).then(async (d) => {
+            const now = Date.now();
+            const updated = await Promise.all(
+                d.map(async (r) => {
+                    if (r.status === "active") {
+                        const expiry = r.expires_at
+                            ? new Date(r.expires_at).getTime()
+                            : new Date(r.created_at || r.created_date || Date.now()).getTime() + (r.hours || 2) * 3600 * 1000;
+                        if (now >= expiry) {
+                            try {
+                                await base44.entities.Reservation.update(r.id, { status: "expired" });
+                                const slots = await base44.entities.ParkingSlot.filter({ code: r.slot_code });
+                                if (slots[0]) await base44.entities.ParkingSlot.update(slots[0].id, { status: "available" });
+                                return { ...r, status: "expired" };
+                            } catch (e) {
+                                return r;
+                            }
+                        }
+                    }
+                    return r;
+                })
+            );
+            setItems(updated);
             setLoading(false);
         });
 

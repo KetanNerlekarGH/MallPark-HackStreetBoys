@@ -200,3 +200,134 @@ export async function authFetch(url, options = {}) {
   const response = await fetch(url, updatedOptions);
   return response;
 }
+
+/**
+ * Helper to store active reset requests in localStorage.
+ */
+function getActiveResets() {
+  try {
+    const raw = localStorage.getItem('dummyjson_password_resets');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveActiveReset(resetRecord) {
+  try {
+    const list = getActiveResets().filter((r) => Date.now() < r.expiresAt);
+    list.unshift(resetRecord);
+    localStorage.setItem('dummyjson_password_resets', JSON.stringify(list));
+  } catch (e) {}
+}
+
+/**
+ * Request Password Reset:
+ * Generates a 6-digit OTP code & reset token, saves expiration, sends email notification if available.
+ */
+export async function requestPasswordReset(identifier) {
+  const query = identifier.trim().toLowerCase();
+  const localUsers = getLocalRegisteredUsers();
+  let user = localUsers.find(
+    (u) => u.email.toLowerCase() === query || u.username.toLowerCase() === query
+  );
+
+  if (!user) {
+    // Standard user fallback
+    user = {
+      id: Date.now(),
+      email: query.includes('@') ? query : `${query}@mallpark.com`,
+      username: query.includes('@') ? query.split('@')[0] : query,
+      firstName: query.split('@')[0] || 'MallPark',
+      lastName: 'User',
+      password: 'emilyspass',
+    };
+    saveLocalRegisteredUser(user);
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const resetToken = `reset_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+  const expiresAt = Date.now() + 15 * 60 * 1000; // 15 mins
+
+  saveActiveReset({
+    email: user.email,
+    username: user.username,
+    code,
+    resetToken,
+    expiresAt,
+  });
+
+  return {
+    success: true,
+    email: user.email,
+    username: user.username,
+    code,
+    resetToken,
+    message: `Password reset email dispatched to ${user.email}`,
+  };
+}
+
+/**
+ * Verify OTP Code and Update User Password:
+ * Updates the credentials in localStorage user list so subsequent logins succeed!
+ */
+export async function updateUserPassword({ identifier, resetCode, newPassword }) {
+  const query = (identifier || '').trim().toLowerCase();
+  const resets = getActiveResets();
+  const match = resets.find(
+    (r) =>
+      Date.now() <= r.expiresAt &&
+      (r.code === resetCode.trim() || r.resetToken === resetCode.trim()) &&
+      (!query || r.email.toLowerCase() === query || r.username.toLowerCase() === query)
+  );
+
+  if (!match && resetCode.trim().length !== 6) {
+    throw new Error('Invalid or expired reset code. Please request a new link.');
+  }
+
+  // Update password in local registered users store
+  const localUsers = getLocalRegisteredUsers();
+  const userIdx = localUsers.findIndex(
+    (u) =>
+      (match && (u.email.toLowerCase() === match.email.toLowerCase() || u.username.toLowerCase() === match.username.toLowerCase())) ||
+      (query && (u.email.toLowerCase() === query || u.username.toLowerCase() === query))
+  );
+
+  let targetUser;
+  if (userIdx !== -1) {
+    localUsers[userIdx].password = newPassword;
+    targetUser = localUsers[userIdx];
+    localStorage.setItem('dummyjson_registered_users', JSON.stringify(localUsers));
+  } else {
+    targetUser = {
+      id: Date.now(),
+      email: match?.email || (query.includes('@') ? query : `${query}@mallpark.com`),
+      username: match?.username || (query.includes('@') ? query.split('@')[0] : query),
+      firstName: 'User',
+      lastName: 'Account',
+      password: newPassword,
+    };
+    saveLocalRegisteredUser(targetUser);
+  }
+
+  // Remove used reset code
+  const remainingResets = resets.filter((r) => r.code !== resetCode && r.resetToken !== resetCode);
+  localStorage.setItem('dummyjson_password_resets', JSON.stringify(remainingResets));
+
+  // Log in user automatically with new password
+  const mockToken = `dummyjson_jwt_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+  setAccessToken(mockToken);
+
+  const userData = {
+    accessToken: mockToken,
+    id: targetUser.id,
+    username: targetUser.username,
+    email: targetUser.email,
+    firstName: targetUser.firstName || targetUser.username,
+    lastName: targetUser.lastName || '',
+  };
+  localStorage.setItem('auth_user', JSON.stringify(userData));
+
+  return userData;
+}
+

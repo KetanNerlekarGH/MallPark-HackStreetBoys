@@ -63,26 +63,15 @@ export const reducer = (state, action) => {
         case actionTypes.DISMISS_TOAST: {
             const { toastId } = action;
 
-            // ! Side effects ! - This could be extracted into a dismissToast() action,
-            // but I'll keep it here for simplicity
             if (toastId) {
-                addToRemoveQueue(toastId);
+                _clearFromRemoveQueue(toastId);
             } else {
-                state.toasts.forEach((toast) => {
-                    addToRemoveQueue(toast.id);
-                });
+                state.toasts.forEach((t) => _clearFromRemoveQueue(t.id));
             }
 
             return {
                 ...state,
-                toasts: state.toasts.map((t) =>
-                    t.id === toastId || toastId === undefined
-                        ? {
-                            ...t,
-                            open: false,
-                        }
-                        : t
-                ),
+                toasts: state.toasts.filter((t) => (toastId ? t.id !== toastId : false)),
             };
         }
         case actionTypes.REMOVE_TOAST:
@@ -110,7 +99,7 @@ function dispatch(action) {
     });
 }
 
-function toast({ ...props }) {
+function toast({ duration = 4500, ...props }) {
     const id = genId();
 
     const update = (props) =>
@@ -133,6 +122,12 @@ function toast({ ...props }) {
             },
         },
     });
+
+    if (duration > 0) {
+        setTimeout(() => {
+            dismiss();
+        }, duration);
+    }
 
     return {
         id,

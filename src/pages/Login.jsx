@@ -11,13 +11,13 @@ import { safeReturnTo } from "@/lib/authReturnTo";
 
 const LOGIN_AUTH_PHRASES = [
     "Spot Found. Stress Gone.",
-    "No More Parking Hunt.",
+    "Hurry up! You have a movie to watch.",
     "Stop Circling. Start Shopping.",
     "Your Spot is Waiting.",
     "One App. One Spot. Zero Hassle.",
     "Pull In. Park Smart.",
     "Find Your Spot. Own Your Time.",
-    "Parking? Sorted.",
+    "Hope that date goes well ;)",
 ];
 
 export default function Login() {

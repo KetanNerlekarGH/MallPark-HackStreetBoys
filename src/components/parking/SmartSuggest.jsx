@@ -14,12 +14,13 @@ export default function SmartSuggest({ slots, floor, onNavigate, onReserve }) {
   if (!suggestion) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="relative overflow-hidden rounded-3xl p-6 md:p-8 text-foreground dark:text-white border border-border/80 dark:border-purple-500/30 bg-gradient-to-r from-card via-slate-50 to-purple-50/50 dark:from-[#130b2c] dark:via-[#0d071e] dark:to-[#070312] shadow-xl dark:shadow-[0_0_40px_rgba(147,51,234,0.15)]"
-    >
+    <div className="animated-purple-border-wrapper shadow-[0_0_40px_rgba(168,85,247,0.25)] rounded-3xl">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative overflow-hidden rounded-[calc(1.5rem-2px)] p-6 md:p-8 text-foreground dark:text-white border-0 bg-gradient-to-r from-card via-slate-50 to-purple-50/50 dark:from-[#130b2c] dark:via-[#0d071e] dark:to-[#070312]"
+      >
       <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-purple-600/10 dark:bg-purple-600/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-indigo-600/10 dark:bg-indigo-600/20 blur-3xl pointer-events-none" />
       <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6 z-10">
@@ -51,5 +52,6 @@ export default function SmartSuggest({ slots, floor, onNavigate, onReserve }) {
         </div>
       </div>
     </motion.div>
+    </div>
   );
 }

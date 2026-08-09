@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { updateUserPassword } from "@/api/authApi";
+import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,26 +10,34 @@ import AuthLayout from "@/components/AuthLayout";
 
 export default function ResetPassword() {
     const [searchParams] = useSearchParams();
-    const resetToken = searchParams.get("token");
+    const resetToken = searchParams.get("token") || searchParams.get("code");
+    const email = searchParams.get("email");
 
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const { login } = useAuth();
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         if (newPassword !== confirmPassword) {
-            setError("Passwords do not match");
+            setError("Passwords do not match. Please verify.");
             return;
         }
         setLoading(true);
         try {
-            await base44.auth.resetPassword({ resetToken, newPassword });
-            window.location.href = "/login";
+            const userData = await updateUserPassword({
+                identifier: email,
+                resetCode: resetToken,
+                newPassword,
+            });
+            login(userData, userData.accessToken);
+            window.location.href = "/select-location";
         } catch (err) {
-            setError(err.message || "Failed to reset password");
+            setError(err.message || "Failed to reset password. Link may be expired.");
         } finally {
             setLoading(false);
         }
