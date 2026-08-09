@@ -8,6 +8,7 @@ export const PUNE_MALLS_DATA = [
     id: "phoenix",
     name: "Phoenix Marketcity",
     location: "Viman Nagar, Pune",
+    image: "/malls/phoenix-pune.png",
     architecturalStyle: "Spacious Multi-Wing Atrium",
     description: "Pune's largest premier lifestyle destination featuring 4 expansive multi-wing levels with flagship global brands, dining, and multiplex cinema.",
     theme: {
@@ -62,6 +63,7 @@ export const PUNE_MALLS_DATA = [
     id: "pavilion",
     name: "Pavilion Mall",
     location: "Senapati Bapat Road, Pune",
+    image: "/malls/pavilion-pune.png",
     architecturalStyle: "Circular Atrium & Skylight Dome",
     description: "A chic, upscale modern shopping center anchored around a signature 3-story circular glass atrium with floating perimeter balconies.",
     theme: {
@@ -107,6 +109,7 @@ export const PUNE_MALLS_DATA = [
     id: "amanora",
     name: "Amanora Mall",
     location: "Hadapsar, Pune",
+    image: "/malls/amanora-pune.png",
     architecturalStyle: "Open-Concept Twin Block Plaza",
     description: "An iconic open-concept lifestyle plaza with dual multi-block wings, central landscaped garden court, and outdoor promenade.",
     theme: {

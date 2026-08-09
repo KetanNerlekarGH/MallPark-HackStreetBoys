@@ -93,11 +93,13 @@ export default function Reservations() {
     return (
         <div className="space-y-8">
             <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Your bookings</p>
-                <h1 className="mt-2 text-4xl font-semibold tracking-tighter">Reservations</h1>
+                <p className="text-xs font-mono uppercase tracking-[0.25em] text-purple-300/80">Your bookings</p>
+                <h1 className="mt-2 text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-purple-100 to-indigo-200 bg-clip-text text-transparent">
+                    Reservations
+                </h1>
             </div>
 
-            <div className="inline-flex rounded-full border bg-card p-1 gap-1">
+            <div className="inline-flex rounded-full border border-purple-900/40 bg-[#0f0a21] p-1 gap-1">
                 {tabs.map((t) => {
                     const Icon = t.icon;
                     const on = tab === t.id;
@@ -105,11 +107,14 @@ export default function Reservations() {
                         <button
                             key={t.id}
                             onClick={() => setTab(t.id)}
-                            className={`inline-flex items-center gap-2 rounded-full px-4 h-9 text-sm font-medium transition-colors ${on ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                                }`}
+                            className={`inline-flex items-center gap-2 rounded-full px-4 h-9 text-xs font-medium transition-all ${
+                                on
+                                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-[0_0_15px_rgba(147,51,234,0.35)]"
+                                    : "text-purple-200/70 hover:text-white"
+                            }`}
                         >
-                            <Icon className="w-4 h-4" /> {t.label}
-                            <span className={`text-[11px] px-1.5 rounded-full ${on ? "bg-primary-foreground/20" : "bg-muted"}`}>
+                            <Icon className="w-3.5 h-3.5" /> {t.label}
+                            <span className={`text-[10px] font-mono px-1.5 rounded-full ${on ? "bg-purple-900/60 text-white" : "bg-purple-950/60 text-purple-300"}`}>
                                 {t.count}
                             </span>
                         </button>
@@ -118,12 +123,12 @@ export default function Reservations() {
             </div>
 
             {tab === "history" && (
-                <div className="rounded-3xl border bg-card p-6 flex items-center justify-between">
+                <div className="rounded-2xl border border-purple-900/40 bg-[#0d081c]/80 p-6 flex items-center justify-between backdrop-blur-xl shadow-[0_0_30px_rgba(147,51,234,0.08)]">
                     <div>
-                        <p className="text-xs uppercase tracking-widest text-muted-foreground">Total fees paid</p>
-                        <p className="mt-1 text-3xl font-semibold tracking-tight">₹{totalPaid}</p>
+                        <p className="text-xs font-mono uppercase tracking-widest text-purple-300/80">Total fees paid</p>
+                        <p className="mt-1 text-3xl font-bold tracking-tight text-white">₹{totalPaid}</p>
                     </div>
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                         <Receipt className="w-6 h-6" />
                     </div>
                 </div>
@@ -131,38 +136,38 @@ export default function Reservations() {
 
             {loading ? (
                 <div className="h-40 flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-muted border-t-foreground rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-purple-900 border-t-purple-400 rounded-full animate-spin" />
                 </div>
             ) : tab === "active" ? (
                 active.length === 0 ? (
-                    <div className="rounded-3xl border border-dashed p-16 text-center">
-                        <Ticket className="w-6 h-6 mx-auto text-muted-foreground" />
-                        <p className="mt-3 text-muted-foreground">No active reservations — pick a green slot on the live map.</p>
+                    <div className="rounded-2xl border border-dashed border-purple-900/40 p-16 text-center bg-[#0d081c]/50">
+                        <Ticket className="w-6 h-6 mx-auto text-purple-400/60" />
+                        <p className="mt-3 text-sm text-purple-300/60 font-mono">No active reservations — pick a green slot on the live map.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {active.map((r) => (
                             <div
                                 key={r.id}
-                                className="rounded-3xl border bg-card p-5 flex flex-wrap items-center justify-between gap-4"
+                                className="rounded-2xl border border-purple-900/40 bg-[#0d081c]/80 p-5 flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl transition-all hover:border-purple-500/40 shadow-[0_0_20px_rgba(147,51,234,0.06)]"
                             >
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-lg font-semibold tracking-tight">{r.slot_code}</span>
-                                        {r.is_ev && <Zap className="w-4 h-4 text-sky-500" />}
-                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600">active</span>
+                                        <span className="text-lg font-semibold tracking-tight text-white">{r.slot_code}</span>
+                                        {r.is_ev && <Zap className="w-4 h-4 text-sky-400" />}
+                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">active</span>
                                     </div>
-                                    <p className="mt-1 text-sm text-muted-foreground">
+                                    <p className="mt-1 text-sm text-purple-200/60">
                                         Level {r.floor} · {r.vehicle_number || "—"} · {r.hours}h ·{" "}
                                         {r.created_date ? format(new Date(r.created_date), "d MMM, HH:mm") : ""}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-2xl font-semibold tracking-tight">₹{r.estimated_fee}</span>
-                                    <Button variant="outline" className="rounded-full" onClick={() => openManage(r)}>
+                                    <span className="text-2xl font-semibold tracking-tight text-white">₹{r.estimated_fee}</span>
+                                    <Button variant="outline" className="rounded-full border-purple-900/40 bg-purple-950/40 text-purple-200 hover:bg-purple-900/50 hover:border-purple-500/50" onClick={() => openManage(r)}>
                                         <Settings className="w-4 h-4 mr-1.5" /> Manage
                                     </Button>
-                                    <Button className="rounded-full" onClick={() => openPay(r)}>
+                                    <Button className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium shadow-[0_0_15px_rgba(124,58,237,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)]" onClick={() => openPay(r)}>
                                         <CreditCard className="w-4 h-4 mr-1.5" /> Pay & Exit
                                     </Button>
                                 </div>
@@ -171,9 +176,9 @@ export default function Reservations() {
                     </div>
                 )
             ) : history.length === 0 ? (
-                <div className="rounded-3xl border border-dashed p-16 text-center">
-                    <HistoryIcon className="w-6 h-6 mx-auto text-muted-foreground" />
-                    <p className="mt-3 text-muted-foreground">
+                <div className="rounded-2xl border border-dashed border-purple-900/40 p-16 text-center bg-[#0d081c]/50">
+                    <HistoryIcon className="w-6 h-6 mx-auto text-purple-400/60" />
+                    <p className="mt-3 text-sm text-purple-300/60 font-mono">
                         No past sessions yet — completed and cancelled bookings will show here.
                     </p>
                 </div>
@@ -182,7 +187,7 @@ export default function Reservations() {
                     {history.map((r) => (
                         <div
                             key={r.id}
-                            className="rounded-3xl border bg-card p-5 flex flex-wrap items-center justify-between gap-4"
+                            className="rounded-2xl border border-purple-900/40 bg-[#0d081c]/80 p-5 flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl transition-all hover:border-purple-500/40 shadow-[0_0_20px_rgba(147,51,234,0.06)]"
                         >
                             <div>
                                 <div className="flex items-center gap-2">

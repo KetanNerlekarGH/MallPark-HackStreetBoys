@@ -222,9 +222,11 @@ export default function Floor3DView({
     const height = 520;
 
     // 1. Scene Setup
+    const isDark = document.documentElement.classList.contains("dark");
+    const bgColor = isDark ? "#06040a" : "#f8fafc";
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#f1f5f9");
-    scene.fog = new THREE.FogExp2("#f1f5f9", 0.006);
+    scene.background = new THREE.Color(bgColor);
+    scene.fog = new THREE.FogExp2(bgColor, 0.006);
 
     const isAllMode = String(selectedFloor).toLowerCase() === "all";
 
@@ -278,13 +280,13 @@ export default function Floor3DView({
     dirLight.shadow.camera.bottom = -45;
     scene.add(dirLight);
 
-    const fillLight = new THREE.DirectionalLight(0xbae6fd, 0.6);
+    const fillLight = new THREE.DirectionalLight(0xa855f7, 0.6);
     fillLight.position.set(-30, 30, -30);
     scene.add(fillLight);
 
     // Ground Base Ground Level
     const groundGeo = new THREE.PlaneGeometry(100, 90);
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.9 });
+    const groundMat = new THREE.MeshStandardMaterial({ color: isDark ? 0x0c0817 : 0xe2e8f0, roughness: 0.9 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
@@ -293,7 +295,7 @@ export default function Floor3DView({
     // Mall Entrance Portal Building Box at Front Right
     const entranceGeo = new THREE.BoxGeometry(8, 6, 12);
     entranceGeo.translate(22, 3, -12);
-    const entranceMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+    const entranceMat = new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8, roughness: 0.2 });
     const entrance = new THREE.Mesh(entranceGeo, entranceMat);
     entrance.castShadow = true;
     scene.add(entrance);
@@ -342,11 +344,11 @@ export default function Floor3DView({
       const floorSlabGeo = new THREE.BoxGeometry(38, 0.4, 34);
       floorSlabGeo.translate(0, yOffset, -2);
       const floorSlabMat = new THREE.MeshStandardMaterial({
-        color: isAllMode ? 0xbae6fd : 0xf8fafc,
-        metalness: 0.1,
-        roughness: 0.2,
+        color: isAllMode ? 0x1e293b : 0x18181b,
+        metalness: 0.2,
+        roughness: 0.4,
         transparent: isAllMode,
-        opacity: isAllMode ? 0.38 : 1.0,
+        opacity: isAllMode ? 0.45 : 1.0,
         depthWrite: !isAllMode,
       });
       const floorSlab = new THREE.Mesh(floorSlabGeo, floorSlabMat);
@@ -477,6 +479,53 @@ export default function Floor3DView({
           }
         });
       });
+
+      // --- 3D ARCHITECTURAL MAP LANDMARKS PER FLOOR ---
+      // 1. 3D Glass Elevator Tower & Lift Lobby
+      const eleBoxGeo = new THREE.BoxGeometry(4.5, 5.0, 4.5);
+      const eleBoxMat = new THREE.MeshStandardMaterial({
+        color: 0x6d28d9,
+        emissive: 0x4c1d95,
+        emissiveIntensity: 0.6,
+        metalness: 0.8,
+        roughness: 0.2,
+        transparent: true,
+        opacity: 0.85
+      });
+      const eleBox = new THREE.Mesh(eleBoxGeo, eleBoxMat);
+      eleBox.position.set(-15, yOffset + 2.7, 10);
+      eleBox.castShadow = true;
+      scene.add(eleBox);
+
+      // Elevator Sign Box
+      const eleSignGeo = new THREE.BoxGeometry(3.8, 0.8, 0.2);
+      const eleSignMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0xa855f7, emissiveIntensity: 0.9 });
+      const eleSign = new THREE.Mesh(eleSignGeo, eleSignMat);
+      eleSign.position.set(-15, yOffset + 5.2, 12.3);
+      scene.add(eleSign);
+
+      // 2. 3D Striped Pedestrian Crosswalk Lanes (Leading to Elevator)
+      for (let i = -14; i <= 14; i += 3.5) {
+        const stripeGeo = new THREE.BoxGeometry(1.8, 0.05, 0.5);
+        const stripeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.4 });
+        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+        stripe.position.set(i, yOffset + 0.22, 3);
+        scene.add(stripe);
+      }
+
+      // 3. 3D Entry Barrier Gate (Green Beacon)
+      const entryGateGeo = new THREE.BoxGeometry(1.2, 2.5, 1.2);
+      const entryGateMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x059669, emissiveIntensity: 0.8 });
+      const entryGate = new THREE.Mesh(entryGateGeo, entryGateMat);
+      entryGate.position.set(16, yOffset + 1.45, 12);
+      scene.add(entryGate);
+
+      // 4. 3D Exit Barrier Gate (Red Beacon)
+      const exitGateGeo = new THREE.BoxGeometry(1.2, 2.5, 1.2);
+      const exitGateMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xe11d48, emissiveIntensity: 0.8 });
+      const exitGate = new THREE.Mesh(exitGateGeo, exitGateMat);
+      exitGate.position.set(-16, yOffset + 1.45, -16);
+      scene.add(exitGate);
     });
 
     // 6. Raycasting Click Selection
@@ -538,17 +587,17 @@ export default function Floor3DView({
   }, [slots, highlightCode, selectedFloor, autoRotate, CAR_COLORS, onSelect]);
 
   return (
-    <div className="relative rounded-[2rem] border border-border bg-card shadow-xl overflow-hidden">
+    <div className="relative rounded-3xl border border-border/80 dark:border-purple-900/40 bg-card dark:bg-[#0d081c] shadow-2xl overflow-hidden">
       {/* 3D Multi-Level Building Controls Top Bar */}
-      <div className="p-4 sm:p-6 border-b bg-muted/30 flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 border-b border-border/80 dark:border-purple-900/40 bg-card/80 dark:bg-[#0c071a]/80 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-            <p className="text-xs font-semibold tracking-widest uppercase text-sky-600 dark:text-sky-400">
+            <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <p className="text-xs font-mono font-semibold tracking-widest uppercase text-purple-600 dark:text-purple-300">
               3D Parking Garage Building Model
             </p>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-0.5">
+          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground dark:text-white mt-0.5">
             3 Floors · 3 Rows of 10 Bays Per Floor
           </h3>
         </div>
@@ -559,7 +608,11 @@ export default function Floor3DView({
             variant={String(selectedFloor).toLowerCase() === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedFloor("all")}
-            className="rounded-full text-xs font-medium h-9"
+            className={`rounded-full text-xs font-medium h-9 transition-all ${
+              String(selectedFloor).toLowerCase() === "all"
+                ? "bg-primary text-primary-foreground dark:bg-gradient-to-r dark:from-indigo-500 dark:to-purple-600 dark:text-white font-semibold shadow-sm dark:shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+                : "bg-card border-border text-muted-foreground hover:text-foreground dark:bg-[#0f0a21] dark:border-purple-900/40 dark:text-purple-200/70 dark:hover:text-white dark:hover:border-purple-500/40 dark:hover:bg-purple-900/20"
+            }`}
           >
             <Layers className="w-3.5 h-3.5 mr-1" />
             Full Building
@@ -568,7 +621,11 @@ export default function Floor3DView({
             variant={String(selectedFloor) === "1" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedFloor(1)}
-            className="rounded-full text-xs font-medium h-9"
+            className={`rounded-full text-xs font-medium h-9 transition-all ${
+              String(selectedFloor) === "1"
+                ? "bg-primary text-primary-foreground dark:bg-gradient-to-r dark:from-indigo-500 dark:to-purple-600 dark:text-white font-semibold shadow-sm dark:shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+                : "bg-card border-border text-muted-foreground hover:text-foreground dark:bg-[#0f0a21] dark:border-purple-900/40 dark:text-purple-200/70 dark:hover:text-white dark:hover:border-purple-500/40 dark:hover:bg-purple-900/20"
+            }`}
           >
             Level 1
           </Button>
@@ -576,7 +633,11 @@ export default function Floor3DView({
             variant={String(selectedFloor) === "2" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedFloor(2)}
-            className="rounded-full text-xs font-medium h-9"
+            className={`rounded-full text-xs font-medium h-9 transition-all ${
+              String(selectedFloor) === "2"
+                ? "bg-primary text-primary-foreground dark:bg-gradient-to-r dark:from-indigo-500 dark:to-purple-600 dark:text-white font-semibold shadow-sm dark:shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+                : "bg-card border-border text-muted-foreground hover:text-foreground dark:bg-[#0f0a21] dark:border-purple-900/40 dark:text-purple-200/70 dark:hover:text-white dark:hover:border-purple-500/40 dark:hover:bg-purple-900/20"
+            }`}
           >
             Level 2
           </Button>
@@ -584,7 +645,11 @@ export default function Floor3DView({
             variant={String(selectedFloor) === "3" ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedFloor(3)}
-            className="rounded-full text-xs font-medium h-9"
+            className={`rounded-full text-xs font-medium h-9 transition-all ${
+              String(selectedFloor) === "3"
+                ? "bg-primary text-primary-foreground dark:bg-gradient-to-r dark:from-indigo-500 dark:to-purple-600 dark:text-white font-semibold shadow-sm dark:shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+                : "bg-card border-border text-muted-foreground hover:text-foreground dark:bg-[#0f0a21] dark:border-purple-900/40 dark:text-purple-200/70 dark:hover:text-white dark:hover:border-purple-500/40 dark:hover:bg-purple-900/20"
+            }`}
           >
             Level 3
           </Button>
@@ -592,7 +657,11 @@ export default function Floor3DView({
             variant={autoRotate ? "default" : "outline"}
             size="sm"
             onClick={() => setAutoRotate((r) => !r)}
-            className="rounded-full text-xs font-medium h-9 ml-1"
+            className={`rounded-full text-xs font-medium h-9 ml-1 transition-all ${
+              autoRotate
+                ? "bg-purple-600 text-white font-semibold shadow-sm dark:shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                : "bg-card border-border text-muted-foreground hover:text-foreground dark:bg-[#0f0a21] dark:border-purple-900/40 dark:text-purple-200/70 dark:hover:text-white dark:hover:border-purple-500/40 dark:hover:bg-purple-900/20"
+            }`}
           >
             <Compass className={`w-3.5 h-3.5 mr-1 ${autoRotate ? "animate-spin" : ""}`} />
             {autoRotate ? "Rotating" : "Rotate 360°"}
@@ -601,24 +670,24 @@ export default function Floor3DView({
       </div>
 
       {/* Three.js Canvas Container */}
-      <div className="relative w-full h-[520px] bg-slate-100 dark:bg-slate-900 cursor-grab active:cursor-grabbing">
+      <div className="relative w-full h-[520px] bg-slate-100 dark:bg-[#06040a] cursor-grab active:cursor-grabbing">
         <div ref={mountRef} className="w-full h-full" />
 
         {/* Overlay Legend Bar */}
-        <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-10 p-3.5 rounded-2xl bg-background/90 backdrop-blur-md border shadow-lg flex flex-wrap items-center gap-4 text-xs">
+        <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-10 p-3.5 rounded-2xl bg-card/95 dark:bg-[#0c071a]/95 backdrop-blur-xl border border-border/80 dark:border-purple-900/40 shadow-2xl flex flex-wrap items-center gap-4 text-xs text-foreground dark:text-purple-200 font-medium">
           <div className="flex items-center gap-2">
-            <Accessibility className="w-4 h-4 text-blue-600" />
-            <span className="font-semibold text-blue-600 dark:text-blue-400">Specially Abled (Near Mall Entrance)</span>
+            <Accessibility className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+            <span className="font-semibold text-blue-600 dark:text-blue-400">Specially Abled (Near Entrance)</span>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="w-3.5 h-3.5 rounded bg-blue-500 flex items-center justify-center text-[9px] font-bold text-white">P</div>
-            <span className="font-medium text-foreground">Tap Free Spot to Reserve</span>
+            <span>Tap Free Spot to Reserve</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Zap className="w-3.5 h-3.5 text-sky-500" />
-            <span className="font-medium text-sky-600 dark:text-sky-400">EV Charger</span>
+            <Zap className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
+            <span className="text-sky-600 dark:text-sky-400 font-semibold">EV Charger</span>
           </div>
         </div>
       </div>

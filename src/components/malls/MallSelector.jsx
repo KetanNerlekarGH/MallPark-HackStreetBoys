@@ -31,13 +31,23 @@ export default function MallSelector({ selectedMall, onSelectMall }) {
                   : "hover:border-primary/50 hover:bg-card/80 opacity-85 hover:opacity-100"
               }`}
             >
-              <Card className={`h-full border transition-colors ${isSelected ? "border-primary bg-primary/5" : ""}`}>
+              <Card className={`h-full border transition-colors overflow-hidden ${isSelected ? "border-primary bg-primary/5" : ""}`}>
                 <CardContent className="p-4 space-y-2.5">
+                  {mall.image && (
+                    <div className="w-full h-28 rounded-xl overflow-hidden mb-2 relative border border-border/40">
+                      <img src={mall.image} alt={mall.name} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" />
+                      <span className={`absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full font-medium border backdrop-blur-md ${mall.theme.badgeBg}`}>
+                        {mall.floors.length} Floors
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-bold text-base line-clamp-1">{mall.name}</h3>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0 ${mall.theme.badgeBg}`}>
-                      {mall.floors.length} Floors
-                    </span>
+                    {!mall.image && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border shrink-0 ${mall.theme.badgeBg}`}>
+                        {mall.floors.length} Floors
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

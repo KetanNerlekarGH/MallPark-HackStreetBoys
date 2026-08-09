@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { CircleParking, CarFront, Percent, Zap } from "lucide-react";
+import { CircleParking, CarFront, Percent, Zap, MapPin } from "lucide-react";
 import StatCard from "@/components/parking/StatCard";
 import Filters from "@/components/parking/Filters";
 import FloorLayout from "@/components/parking/FloorLayout";
@@ -9,8 +9,15 @@ import SmartSuggest from "@/components/parking/SmartSuggest";
 import Floor3DView from "@/components/parking/Floor3DView";
 import DirectionsModal from "@/components/parking/DirectionsModal";
 import { useToast } from "@/components/ui/use-toast";
+import { useLocationContext } from "@/context/LocationContext";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Dashboard() {
+    const { selectedState, selectedCity, selectedMall, openLocationModal } = useLocationContext();
+    const { user } = useAuth();
+    const username = user?.username || user?.firstName || "User";
+    const mallName = selectedMall?.name || "Phoenix Marketcity";
+
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(true);
     const [floor, setFloor] = useState(1);
@@ -23,10 +30,15 @@ export default function Dashboard() {
 
     useEffect(() => {
         base44.entities.ParkingSlot.list("code", 500).then((d) => {
-            setSlots(d);
+            // Update slots hourly rate if mall specifies custom rate
+            const updated = d.map((s) => ({
+                ...s,
+                hourly_rate: selectedMall?.hourlyRate || s.hourly_rate || 40,
+            }));
+            setSlots(updated);
             setLoading(false);
         });
-    }, []);
+    }, [selectedMall]);
 
     // Simulated live updates
     useEffect(() => {
@@ -86,10 +98,17 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="space-y-10">
+        <div className="space-y-10 animate-fade-in-up">
             <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Live availability</p>
-                <h1 className="mt-2 text-4xl md:text-5xl font-semibold tracking-tighter">Find your spot in seconds</h1>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-300 text-[11px] font-mono tracking-widest uppercase mb-3 shadow-sm dark:shadow-[0_0_12px_rgba(168,85,247,0.2)]">
+                    <span className="w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
+                    Live Parking · {selectedState} &gt; {selectedCity} &gt; {selectedMall?.name}
+                </div>
+                <div className="min-h-[3.2rem] sm:min-h-[3.8rem] flex items-center">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:via-purple-100 dark:to-indigo-200 dark:bg-clip-text">
+                        Welcome to {mallName}, <span className="text-purple-700 dark:text-purple-300 font-bold">{username}</span>
+                    </h1>
+                </div>
             </div>
 
             <SmartSuggest
@@ -100,10 +119,10 @@ export default function Dashboard() {
             />
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard label="Available" value={free} sub={floor === "all" ? "all floors" : `of ${total} on Level ${floor}`} icon={CircleParking} accent="text-emerald-500" />
-                <StatCard label="Occupied" value={total - free} sub={floor === "all" ? "all floors" : "currently parked"} icon={CarFront} accent="text-rose-500" />
-                <StatCard label="Occupancy" value={`${rate}%`} sub={floor === "all" ? "full building" : "this level"} icon={Percent} />
-                <StatCard label="EV free" value={evFree} sub="charging bays" icon={Zap} accent="text-sky-500" />
+                <StatCard label="Available" value={free} sub={floor === "all" ? "all floors" : `of ${total} on Level ${floor}`} icon={CircleParking} accent="text-emerald-600 dark:text-emerald-400" />
+                <StatCard label="Occupied" value={total - free} sub={floor === "all" ? "all floors" : "currently parked"} icon={CarFront} accent="text-rose-600 dark:text-rose-400" />
+                <StatCard label="Occupancy" value={`${rate}%`} sub={floor === "all" ? "full building" : "this level"} icon={Percent} accent="text-foreground dark:text-purple-200" />
+                <StatCard label="EV free" value={evFree} sub="charging bays" icon={Zap} accent="text-sky-600 dark:text-sky-400" />
             </div>
 
             <Filters
@@ -118,11 +137,11 @@ export default function Dashboard() {
                 setSearch={setSearch}
             />
 
-            <div className="flex flex-wrap gap-5 text-xs text-muted-foreground">
-                <span className="flex items-center gap-2"><i className="w-3 h-3 rounded bg-emerald-500/60" /> Available</span>
-                <span className="flex items-center gap-2"><i className="w-3 h-3 rounded bg-rose-500/60" /> Occupied</span>
-                <span className="flex items-center gap-2"><i className="w-3 h-3 rounded bg-amber-500/60" /> Reserved</span>
-                <span className="flex items-center gap-2"><Zap className="w-3 h-3 text-sky-500" /> EV charging</span>
+            <div className="flex flex-wrap items-center gap-6 text-xs text-muted-foreground dark:text-purple-200/70 border-y border-border/80 dark:border-purple-900/40 py-3.5 px-2 font-medium">
+                <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" /> Available</span>
+                <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" /> Occupied</span>
+                <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" /> Reserved</span>
+                <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" /> EV charging</span>
             </div>
 
             <Floor3DView
@@ -135,7 +154,7 @@ export default function Dashboard() {
 
             {loading ? (
                 <div className="h-64 flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-muted border-t-foreground rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-2 border-neutral-800 border-t-white rounded-full animate-spin" />
                 </div>
             ) : (
                 <FloorLayout slots={visible} onSelect={setSelected} />

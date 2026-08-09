@@ -18,36 +18,35 @@ export default function SmartSuggest({ slots, floor, onNavigate, onReserve }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="relative overflow-hidden rounded-[2rem] p-6 md:p-8 text-white"
-      style={{ background: "linear-gradient(135deg,#0b1f3a 0%,#16386b 45%,#1d5fb0 100%)" }}
+      className="relative overflow-hidden rounded-3xl p-6 md:p-8 text-foreground dark:text-white border border-border/80 dark:border-purple-500/30 bg-gradient-to-r from-card via-slate-50 to-purple-50/50 dark:from-[#130b2c] dark:via-[#0d071e] dark:to-[#070312] shadow-xl dark:shadow-[0_0_40px_rgba(147,51,234,0.15)]"
     >
-      <div className="absolute -top-16 -right-12 w-64 h-64 rounded-full bg-sky-400/30 blur-3xl" />
-      <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-indigo-500/30 blur-3xl" />
-      <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-purple-600/10 dark:bg-purple-600/20 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-indigo-600/10 dark:bg-indigo-600/20 blur-3xl pointer-events-none" />
+      <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6 z-10">
         <div>
-          <div className="flex items-center gap-2 text-sky-200 text-xs uppercase tracking-[0.25em]">
-            <Sparkles className="w-3.5 h-3.5" /> Smart suggestion
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-300 text-xs font-mono uppercase tracking-[0.25em]">
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Smart Suggestion
           </div>
-          <h2 className="mt-3 text-3xl md:text-4xl font-semibold tracking-tighter">
+          <h2 className="mt-3 text-3xl md:text-4xl font-extrabold tracking-tight text-foreground dark:text-white">
             Head to slot {suggestion.code}
           </h2>
-          <p className="mt-2 text-sky-100/80 text-sm">
+          <p className="mt-2 text-muted-foreground dark:text-purple-200/70 text-sm">
             Level {suggestion.floor} · Zone {suggestion.zone} · {suggestion.vehicle_type.toUpperCase()}
             {suggestion.is_ev && " · EV charging bay"} · ₹{suggestion.hourly_rate}/hr
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
             onClick={() => onNavigate(suggestion)}
-            className="flex items-center gap-2 px-5 h-11 rounded-full bg-white text-[#0b1f3a] text-sm font-medium hover:bg-sky-50 transition-colors"
+            className="btn-shimmer-effect flex items-center gap-2 px-6 h-11 rounded-full bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 text-white text-sm font-semibold shadow-[0_0_20px_rgba(124,58,237,0.35)] dark:shadow-[0_0_25px_rgba(124,58,237,0.45)] hover:shadow-[0_0_35px_rgba(147,51,234,0.75)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300"
           >
-            <Navigation className="w-4 h-4" /> Get directions
+            <Navigation className="w-4 h-4 transition-transform group-hover:rotate-45" /> Get directions
           </button>
           <button
             onClick={() => onReserve(suggestion)}
-            className="flex items-center gap-2 px-5 h-11 rounded-full border border-white/40 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+            className="btn-shimmer-effect flex items-center gap-2 px-6 h-11 rounded-full border border-border dark:border-purple-500/40 bg-card dark:bg-purple-950/40 text-foreground dark:text-purple-200 text-sm font-medium hover:bg-accent dark:hover:bg-purple-900/60 hover:border-purple-400 hover:scale-[1.03] active:scale-[0.97] transition-all duration-300"
           >
-            <Zap className="w-4 h-4" /> Reserve
+            <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Reserve
           </button>
         </div>
       </div>

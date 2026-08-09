@@ -18,6 +18,8 @@ import Analytics from '@/pages/Analytics';
 import Reservations from '@/pages/Reservations';
 import PuneMallsPage from '@/pages/PuneMallsPage';
 
+import SelectLocationPage from '@/pages/SelectLocationPage';
+
 const AuthenticatedApp = () => {
     const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -43,6 +45,7 @@ const AuthenticatedApp = () => {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+                <Route path="/select-location" element={<SelectLocationPage />} />
                 <Route element={<Layout />}>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/malls" element={<PuneMallsPage />} />
@@ -56,18 +59,22 @@ const AuthenticatedApp = () => {
 };
 
 
+import { LocationProvider } from '@/context/LocationContext';
+
 function App() {
 
     return (
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
             <AuthProvider>
-                <QueryClientProvider client={queryClientInstance}>
-                    <Router>
-                        <ScrollToTop />
-                        <AuthenticatedApp />
-                    </Router>
-                    <Toaster />
-                </QueryClientProvider>
+                <LocationProvider>
+                    <QueryClientProvider client={queryClientInstance}>
+                        <Router>
+                            <ScrollToTop />
+                            <AuthenticatedApp />
+                        </Router>
+                        <Toaster />
+                    </QueryClientProvider>
+                </LocationProvider>
             </AuthProvider>
         </ThemeProvider>
     )

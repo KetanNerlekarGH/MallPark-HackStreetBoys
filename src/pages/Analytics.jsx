@@ -35,21 +35,23 @@ export default function Analytics() {
     return (
         <div className="space-y-10">
             <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Analytics</p>
-                <h1 className="mt-2 text-4xl font-semibold tracking-tighter">Mall-wide occupancy</h1>
-                <p className="mt-3 text-muted-foreground">
+                <p className="text-xs font-mono uppercase tracking-[0.25em] text-purple-300/80">Analytics</p>
+                <h1 className="mt-2 text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-purple-100 to-indigo-200 bg-clip-text text-transparent">
+                    Mall-wide occupancy
+                </h1>
+                <p className="mt-2 text-sm text-purple-200/70 font-mono">
                     {occupied} of {total} bays in use · {total ? Math.round((occupied / total) * 100) : 0}% occupancy
                 </p>
             </div>
 
-            <div className="rounded-3xl border bg-card p-6">
-                <h2 className="text-sm uppercase tracking-widest text-muted-foreground mb-6">Slots per level</h2>
+            <div className="rounded-2xl border border-purple-900/40 bg-[#0d081c]/80 p-6 backdrop-blur-xl shadow-[0_0_30px_rgba(147,51,234,0.08)]">
+                <h2 className="text-xs font-mono uppercase tracking-widest text-purple-300/80 mb-6">Slots per level</h2>
                 <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={byFloor}>
-                            <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} />
-                            <YAxis tickLine={false} axisLine={false} fontSize={12} />
-                            <Tooltip contentStyle={{ borderRadius: 12, border: "none" }} />
+                            <XAxis dataKey="name" tickLine={false} axisLine={false} fontSize={12} stroke="#a79cc7" />
+                            <YAxis tickLine={false} axisLine={false} fontSize={12} stroke="#a79cc7" />
+                            <Tooltip contentStyle={{ borderRadius: 12, backgroundColor: "#0c071a", border: "1px solid #3b2567", color: "#ffffff" }} />
                             <Legend />
                             <Bar dataKey="Available" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
                             <Bar dataKey="Occupied" stackId="a" fill="#f43f5e" />
@@ -59,8 +61,8 @@ export default function Analytics() {
                 </div>
             </div>
 
-            <div className="rounded-3xl border bg-card p-6">
-                <h2 className="text-sm uppercase tracking-widest text-muted-foreground mb-6">Capacity by vehicle type</h2>
+            <div className="rounded-2xl border border-purple-900/40 bg-[#0d081c]/80 p-6 backdrop-blur-xl shadow-[0_0_30px_rgba(147,51,234,0.08)]">
+                <h2 className="text-xs font-mono uppercase tracking-widest text-purple-300/80 mb-6">Capacity by vehicle type</h2>
                 <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -69,7 +71,7 @@ export default function Analytics() {
                                     <Cell key={e.name} fill={COLORS[i % COLORS.length]} />
                                 ))}
                             </Pie>
-                            <Tooltip contentStyle={{ borderRadius: 12, border: "none" }} />
+                            <Tooltip contentStyle={{ borderRadius: 12, backgroundColor: "#0c071a", border: "1px solid #3b2567", color: "#ffffff" }} />
                             <Legend />
                         </PieChart>
                     </ResponsiveContainer>

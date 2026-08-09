@@ -1,48 +1,64 @@
-import React, { useState } from "react";
-import { PUNE_MALLS_DATA, getMallById } from "@/data/mallsData";
-import MallSelector from "@/components/malls/MallSelector";
+import React, { useState, useMemo } from "react";
+import { PUNE_MALLS_DATA } from "@/data/mallsData";
 import FloorSelector from "@/components/malls/FloorSelector";
 import Mall3DViewer from "@/components/malls/Mall3DViewer";
-import { Building2, Store, MapPin, Navigation, Tag, ExternalLink, Info, CheckCircle2 } from "lucide-react";
+import { Building2, Store, MapPin, Navigation, Info, Layers, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useLocationContext } from "@/context/LocationContext";
 
 export default function PuneMallsPage() {
-  const [selectedMall, setSelectedMall] = useState(PUNE_MALLS_DATA[0]);
+  const { selectedState, selectedCity, selectedMall: contextMall } = useLocationContext();
   const [activeFloor, setActiveFloor] = useState("all");
   const [selectedStore, setSelectedStore] = useState(null);
 
-  const handleMallChange = (mall) => {
-    setSelectedMall(mall);
-    setActiveFloor("all");
-    setSelectedStore(null);
-  };
+  // Match the user's chosen mall to a 3D parametric dataset
+  const selectedMall = useMemo(() => {
+    if (!contextMall) return PUNE_MALLS_DATA[0];
+    const nameLower = contextMall.name.toLowerCase();
+    const found = PUNE_MALLS_DATA.find(
+      (m) =>
+        m.id.toLowerCase() === contextMall.id.toLowerCase() ||
+        m.name.toLowerCase().includes(nameLower) ||
+        nameLower.includes(m.name.toLowerCase())
+    );
+    if (found) {
+      return {
+        ...found,
+        name: contextMall.name,
+        location: `${contextMall.area || contextMall.city}, ${contextMall.state}`,
+        image: contextMall.image || found.image,
+        description: contextMall.description || found.description,
+      };
+    }
+    return {
+      ...PUNE_MALLS_DATA[0],
+      name: contextMall.name,
+      location: `${contextMall.area || contextMall.city}, ${contextMall.state}`,
+      image: contextMall.image || PUNE_MALLS_DATA[0].image,
+      description: contextMall.description || PUNE_MALLS_DATA[0].description,
+    };
+  }, [contextMall]);
 
-  const filteredStores = activeFloor === "all"
-    ? selectedMall.stores
-    : selectedMall.stores.filter((s) => s.floor === activeFloor);
+  const filteredStores = useMemo(() => {
+    if (activeFloor === "all") return selectedMall.stores;
+    return selectedMall.stores.filter((s) => s.floor === activeFloor);
+  }, [selectedMall, activeFloor]);
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-5">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-              Pune City Architecture
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">
-            Pune 3D Malls Explorer
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Interactive 3D parametric layouts and floor isolation for Phoenix Marketcity, Pavilion, & Amanora Mall.
-          </p>
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Page Header Banner */}
+      <div className="border-b border-border/80 dark:border-purple-900/40 pb-5">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-300 text-[11px] font-mono tracking-widest uppercase mb-3 shadow-sm">
+          <Building2 className="w-3.5 h-3.5 text-purple-500" />
+          <span>{selectedState} &gt; {selectedCity} &gt; {selectedMall.name}</span>
         </div>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 dark:from-white dark:via-purple-100 dark:to-indigo-200 bg-clip-text text-transparent">
+          Explore {selectedMall.name}
+        </h1>
+        <p className="mt-2 text-muted-foreground dark:text-purple-200/70 text-sm max-w-3xl font-sans leading-relaxed">
+          Interactive 3D building layout, floor isolation, and floorwise outlet directory for <strong className="text-white">{selectedMall.name}</strong> ({selectedMall.location}).
+        </p>
       </div>
-
-      {/* Top Selector Component */}
-      <MallSelector selectedMall={selectedMall} onSelectMall={handleMallChange} />
 
       {/* Main 3D Interactive Viewport Section */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
