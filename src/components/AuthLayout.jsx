@@ -45,7 +45,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
             <span className="font-bold text-lg tracking-tight text-foreground flex items-center gap-1.5">
               MallPark
             </span>
-            <span className="text-xs text-muted-foreground hidden sm:inline">3D Multi-Level Parking</span>
+            <span className="text-xs text-muted-foreground hidden sm:inline">Your very own Mall Assistant</span>
           </div>
         </Link>
 
