@@ -38,12 +38,10 @@ function generateSlotsDataset() {
         const isHandicapped = (zone === "A" && (i === 1 || i === 2)); // 1-2 bays near Mall Entrance per floor
         const isEv = !isHandicapped && (i % 3 === 0);
         const isBike = !isHandicapped && (i === 4 || i === 7);
-        const isOccupied = !isHandicapped && (i === 3 || i === 8);
-        const isReserved = isHandicapped || (i === 6);
         
-        let status = "available";
-        if (isOccupied) status = "occupied";
-        else if (isReserved) status = "reserved";
+        // Mark A-101 and A-102 as reserved (yellow) by default
+        const isReservedDefault = code === "A-101" || code === "A-102" || (prefix === "A" && floor === 1 && (i === 1 || i === 2));
+        const status = isReservedDefault ? "reserved" : "available";
 
         slots.push({
           id: String(idCounter++),

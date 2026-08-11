@@ -17,7 +17,7 @@ const LOGIN_AUTH_PHRASES = [
     "One App. One Spot. Zero Hassle.",
     "Pull In. Park Smart.",
     "Find Your Spot. Own Your Time.",
-    "Hope that date goes well ;)",
+    "We hope that date goes well ;)",
 ];
 
 export default function Login() {
