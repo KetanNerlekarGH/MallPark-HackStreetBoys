@@ -44,16 +44,16 @@ export default function LocationSelectorModal() {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={closeLocationModal}>
-      <DialogContent className="max-w-3xl rounded-3xl border border-border/80 dark:border-purple-900/40 bg-card dark:bg-[#0c071a] p-6 sm:p-8 backdrop-blur-2xl shadow-2xl text-foreground dark:text-white overflow-hidden">
-        <DialogHeader>
-          <div className="flex items-center gap-2.5 text-xs font-mono uppercase tracking-[0.2em] text-purple-600 dark:text-purple-300 mb-1">
-            <MapPin className="w-4 h-4 text-purple-500" />
-            <span>Select Your Location & Mall Hub</span>
+      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto rounded-3xl border border-border/80 dark:border-purple-900/40 bg-card dark:bg-[#0c071a] p-5 sm:p-6 backdrop-blur-2xl shadow-2xl text-foreground dark:text-white">
+        <DialogHeader className="pb-2">
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-purple-600 dark:text-purple-300">
+            <MapPin className="w-3.5 h-3.5 text-purple-500" />
+            <span>Select Your Location &amp; Mall Hub</span>
           </div>
-          <DialogTitle className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground dark:text-white">
+          <DialogTitle className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground dark:text-white mt-1">
             Where are you shopping today?
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground dark:text-purple-200/70 text-sm">
+          <DialogDescription className="text-muted-foreground dark:text-purple-200/70 text-xs">
             Choose your state, city, and mall to view real-time parking bay availability and 3D floor maps.
           </DialogDescription>
         </DialogHeader>

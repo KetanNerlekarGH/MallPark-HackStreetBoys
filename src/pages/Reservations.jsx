@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Zap, Ticket, Settings, CreditCard, Receipt, History as HistoryIcon } from "lucide-react";
+import { Zap, Ticket, Settings, CreditCard, Receipt, History as HistoryIcon, CarFront } from "lucide-react";
 import { format } from "date-fns";
 import ManageReservationDialog from "@/components/parking/ManageReservationDialog";
 import PayExitDialog from "@/components/parking/PayExitDialog";
@@ -99,8 +99,9 @@ export default function Reservations() {
         toast({ title: `Payment confirmed · ₹${amount}`, description: "Exit QR issued — scan at the barrier" });
     };
 
-    const active = items.filter((r) => r.status === "active");
-    const history = items.filter((r) => r.status !== "active");
+    const active = items.filter((r) => r.status === "active" && !r.is_valet && (!r.slot_code || !r.slot_code.startsWith("VALET")));
+    const valet = items.filter((r) => r.is_valet || (r.slot_code && r.slot_code.startsWith("VALET")));
+    const history = items.filter((r) => r.status !== "active" && !r.is_valet && (!r.slot_code || !r.slot_code.startsWith("VALET")));
     const totalPaid = history.reduce(
         (s, r) => s + (r.status === "completed" ? r.paid_amount || r.estimated_fee || 0 : 0),
         0
@@ -108,19 +109,20 @@ export default function Reservations() {
 
     const tabs = [
         { id: "active", label: "Active", icon: Ticket, count: active.length },
+        { id: "valet", label: "Valet Bookings", icon: CarFront, count: valet.length },
         { id: "history", label: "History", icon: HistoryIcon, count: history.length },
     ];
 
     return (
         <div className="space-y-8">
             <div>
-                <p className="text-xs font-mono uppercase tracking-[0.25em] text-purple-300/80">Your bookings</p>
-                <h1 className="mt-2 text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-purple-100 to-indigo-200 bg-clip-text text-transparent">
-                    Reservations
+                <p className="text-xs font-mono uppercase tracking-[0.25em] text-purple-600 dark:text-purple-300/80">Your bookings</p>
+                <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-foreground dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:via-purple-100 dark:to-indigo-200 dark:bg-clip-text">
+                    Reservations &amp; Valet Services
                 </h1>
             </div>
 
-            <div className="inline-flex rounded-full border border-purple-900/40 bg-[#0f0a21] p-1 gap-1">
+            <div className="inline-flex rounded-full border border-border dark:border-purple-900/40 bg-card dark:bg-[#0f0a21] p-1 gap-1 shadow-sm">
                 {tabs.map((t) => {
                     const Icon = t.icon;
                     const on = tab === t.id;
@@ -131,11 +133,11 @@ export default function Reservations() {
                             className={`inline-flex items-center gap-2 rounded-full px-4 h-9 text-xs font-medium transition-all ${
                                 on
                                     ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-[0_0_15px_rgba(147,51,234,0.35)]"
-                                    : "text-purple-200/70 hover:text-white"
+                                    : "text-muted-foreground hover:text-foreground dark:text-purple-200/70 dark:hover:text-white"
                             }`}
                         >
                             <Icon className="w-3.5 h-3.5" /> {t.label}
-                            <span className={`text-[10px] font-mono px-1.5 rounded-full ${on ? "bg-purple-900/60 text-white" : "bg-purple-950/60 text-purple-300"}`}>
+                            <span className={`text-[10px] font-mono px-1.5 rounded-full ${on ? "bg-purple-900/60 text-white" : "bg-muted text-muted-foreground dark:bg-purple-950/60 dark:text-purple-300"}`}>
                                 {t.count}
                             </span>
                         </button>
@@ -144,12 +146,12 @@ export default function Reservations() {
             </div>
 
             {tab === "history" && (
-                <div className="rounded-2xl border border-purple-900/40 bg-[#0d081c]/80 p-6 flex items-center justify-between backdrop-blur-xl shadow-[0_0_30px_rgba(147,51,234,0.08)]">
+                <div className="rounded-2xl border border-border dark:border-purple-900/40 bg-card dark:bg-[#0d081c]/80 p-6 flex items-center justify-between backdrop-blur-xl shadow-lg dark:shadow-[0_0_30px_rgba(147,51,234,0.08)]">
                     <div>
-                        <p className="text-xs font-mono uppercase tracking-widest text-purple-300/80">Total fees paid</p>
-                        <p className="mt-1 text-3xl font-bold tracking-tight text-white">₹{totalPaid}</p>
+                        <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground dark:text-purple-300/80">Total fees paid</p>
+                        <p className="mt-1 text-3xl font-bold tracking-tight text-foreground dark:text-white">₹{totalPaid}</p>
                     </div>
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-sm">
                         <Receipt className="w-6 h-6" />
                     </div>
                 </div>
@@ -159,33 +161,78 @@ export default function Reservations() {
                 <div className="h-40 flex items-center justify-center">
                     <div className="w-6 h-6 border-2 border-purple-900 border-t-purple-400 rounded-full animate-spin" />
                 </div>
+            ) : tab === "valet" ? (
+                valet.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-border dark:border-purple-900/40 p-16 text-center bg-card/50 dark:bg-[#0d081c]/50 font-mono">
+                        <CarFront className="w-8 h-8 mx-auto text-purple-600/60 dark:text-purple-400/60" />
+                        <h3 className="text-sm font-bold text-foreground dark:text-white mt-3">No Active Valet Bookings</h3>
+                        <p className="mt-1 text-xs text-muted-foreground dark:text-purple-300/60 max-w-xs mx-auto">
+                            Request VIP Concierge Valet Service from the top-left features menu to have your car parked automatically.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {valet.map((r) => (
+                            <div
+                                key={r.id}
+                                className="rounded-2xl border border-purple-500/40 bg-card dark:bg-[#0d081c]/80 p-5 flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl transition-all shadow-md dark:shadow-[0_0_25px_rgba(168,85,247,0.15)]"
+                            >
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg font-extrabold tracking-tight text-foreground dark:text-white font-mono">{r.slot_code || "VALET-B114"}</span>
+                                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 uppercase">
+                                            VIP Valet Service
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 text-sm text-muted-foreground dark:text-purple-200/70 font-mono">
+                                        {r.mall_name || "Mall"} · {r.vehicle_number || "MH-12-MP-8899"} · Main Entrance Gate · ₹{r.estimated_fee || 150}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30 flex items-center gap-1.5 font-mono">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> PARKED BY VALET
+                                    </span>
+                                    <Button
+                                        onClick={() => {
+                                            window.dispatchEvent(new CustomEvent("terminate-valet-booking", { detail: { slotId: r.slot_code || "B-114" } }));
+                                            load();
+                                        }}
+                                        className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium shadow-md text-xs h-10 px-4"
+                                    >
+                                        🚘 Request Driver Pickup
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )
             ) : tab === "active" ? (
                 active.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-purple-900/40 p-16 text-center bg-[#0d081c]/50">
-                        <Ticket className="w-6 h-6 mx-auto text-purple-400/60" />
-                        <p className="mt-3 text-sm text-purple-300/60 font-mono">No active reservations — pick a green slot on the live map.</p>
+                    <div className="rounded-2xl border border-dashed border-border dark:border-purple-900/40 p-16 text-center bg-card/50 dark:bg-[#0d081c]/50">
+                        <Ticket className="w-6 h-6 mx-auto text-purple-600/60 dark:text-purple-400/60" />
+                        <p className="mt-3 text-sm text-muted-foreground dark:text-purple-300/60 font-mono">No active reservations — pick a green slot on the live map.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {active.map((r) => (
                             <div
                                 key={r.id}
-                                className="rounded-2xl border border-purple-900/40 bg-[#0d081c]/80 p-5 flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl transition-all hover:border-purple-500/40 shadow-[0_0_20px_rgba(147,51,234,0.06)]"
+                                className="rounded-2xl border border-border dark:border-purple-900/40 bg-card dark:bg-[#0d081c]/80 p-5 flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl transition-all hover:border-purple-500/40 shadow-md dark:shadow-[0_0_20px_rgba(147,51,234,0.06)]"
                             >
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-lg font-semibold tracking-tight text-white">{r.slot_code}</span>
-                                        {r.is_ev && <Zap className="w-4 h-4 text-sky-400" />}
-                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">active</span>
+                                        <span className="text-lg font-semibold tracking-tight text-foreground dark:text-white">{r.slot_code}</span>
+                                        {r.is_ev && <Zap className="w-4 h-4 text-sky-500 dark:text-sky-400" />}
+                                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">active</span>
                                     </div>
-                                    <p className="mt-1 text-sm text-purple-200/60">
+                                    <p className="mt-1 text-sm text-muted-foreground dark:text-purple-200/60">
                                         Level {r.floor} · {r.vehicle_number || "—"} · {r.hours}h ·{" "}
                                         {r.created_date ? format(new Date(r.created_date), "d MMM, HH:mm") : ""}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-2xl font-semibold tracking-tight text-white">₹{r.estimated_fee}</span>
-                                    <Button variant="outline" className="rounded-full border-purple-900/40 bg-purple-950/40 text-purple-200 hover:bg-purple-900/50 hover:border-purple-500/50" onClick={() => openManage(r)}>
+                                    <span className="text-2xl font-semibold tracking-tight text-foreground dark:text-white">₹{r.estimated_fee}</span>
+                                    <Button variant="outline" className="rounded-full border-border dark:border-purple-900/40 bg-card dark:bg-purple-950/40 text-foreground dark:text-purple-200 hover:bg-accent dark:hover:bg-purple-900/50" onClick={() => openManage(r)}>
                                         <Settings className="w-4 h-4 mr-1.5" /> Manage
                                     </Button>
                                     <Button className="rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium shadow-[0_0_15px_rgba(124,58,237,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)]" onClick={() => openPay(r)}>

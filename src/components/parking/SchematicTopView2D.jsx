@@ -3,7 +3,7 @@ import { Layers, ShieldCheck } from "lucide-react";
 import { useVehicleSimulation } from "@/hooks/useVehicleSimulation";
 import { useToast } from "@/components/ui/use-toast";
 
-export default function SchematicTopView2D({ slots = [], highlightCode, isARGuide = false, onSelect, onSlotStateChange, onClearDirections, selectedFloor = 1 }) {
+export default function SchematicTopView2D({ slots = [], highlightCode, isARGuide = false, onSelect, onSlotStateChange, onClearDirections, selectedFloor = 1, selectedMall }) {
   const canvasRef = useRef(null);
   const { toast } = useToast();
   const [selectedSlotCode, setSelectedSlotCode] = useState(highlightCode || null);
@@ -35,7 +35,8 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
   }, [slots]);
 
   const getFloorTitleText = (floorVal) => {
-    if (floorVal === "all") return "ALL FLOORS BLUEPRINT MAP";
+    const prefix = selectedMall?.name ? `${selectedMall.name.toUpperCase()} ` : "";
+    if (floorVal === "all") return `${prefix}ALL FLOORS BLUEPRINT MAP`;
     const f = Number(floorVal) || 1;
     const ordinals = {
       1: "FIRST",
@@ -45,7 +46,7 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
       5: "FIFTH",
     };
     const ordName = ordinals[f] || `FLOOR ${f}`;
-    return `${ordName} FLOOR PLAN BLUEPRINT MAP`;
+    return `${prefix}${ordName} FLOOR PLAN BLUEPRINT MAP`;
   };
 
   const getRampUpText = (floorVal, direction = "left") => {
@@ -69,17 +70,17 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
       { zone: "A", num: 9, x: 140, y: 700 },
       { zone: "A", num: 10, x: 140, y: 760 },
 
-      // Zone B (Middle double island, 10 slots)
+      // Zone B (Middle double island, 10 slots - 100% Symmetrical)
       { zone: "B", num: 11, x: 440, y: 340 },
       { zone: "B", num: 12, x: 440, y: 400 },
       { zone: "B", num: 13, x: 440, y: 460 },
       { zone: "B", num: 14, x: 440, y: 520 },
       { zone: "B", num: 15, x: 440, y: 580 },
-      { zone: "B", num: 16, x: 570, y: 520 },
-      { zone: "B", num: 17, x: 570, y: 580 },
-      { zone: "B", num: 18, x: 570, y: 640 },
-      { zone: "B", num: 19, x: 570, y: 700 },
-      { zone: "B", num: 20, x: 570, y: 760 },
+      { zone: "B", num: 16, x: 570, y: 340 },
+      { zone: "B", num: 17, x: 570, y: 400 },
+      { zone: "B", num: 18, x: 570, y: 460 },
+      { zone: "B", num: 19, x: 570, y: 520 },
+      { zone: "B", num: 20, x: 570, y: 580 },
 
       // Zone C (Right vertical column, 9 slots)
       { zone: "C", num: 21, x: 880, y: 280 },
@@ -201,27 +202,51 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
       ctx.fillText("ELEVATOR LOBBY", 710, 195);
       ctx.fillText("& STAIRCASE", 725, 215);
 
-      // 3. BOTTOM MAIN ENTRANCE & EXIT GATE
+      // 3. BOTTOM MAIN ENTRANCE GATE (IN) - LEFT
       ctx.fillStyle = "#0284c7";
-      ctx.fillRect(230, 875, 180, 65);
+      ctx.fillRect(190, 875, 180, 65);
       ctx.strokeStyle = "#38bdf8";
-      ctx.strokeRect(230, 875, 180, 65);
+      ctx.lineWidth = 3;
+      ctx.strokeRect(190, 875, 180, 65);
 
-      // Ticket Kiosks
+      // Entrance Ticket Kiosks
       ctx.fillStyle = "#f59e0b";
-      ctx.fillRect(225, 860, 20, 30);
-      ctx.fillRect(395, 860, 20, 30);
+      ctx.fillRect(185, 860, 20, 30);
+      ctx.fillRect(355, 860, 20, 30);
 
-      // Barrier Arm
+      // Entrance Barrier Arm
       ctx.strokeStyle = "#ef4444";
       ctx.lineWidth = 5;
       ctx.beginPath();
-      ctx.moveTo(245, 880); ctx.lineTo(395, 880);
+      ctx.moveTo(205, 880); ctx.lineTo(355, 880);
       ctx.stroke();
 
       ctx.fillStyle = "#ffffff";
       ctx.font = "bold 13px sans-serif";
-      ctx.fillText("ENTRANCE & EXIT GATE", 235, 920);
+      ctx.fillText("ENTRANCE GATE 🎟️ (IN)", 195, 915);
+
+      // 3B. BOTTOM DEDICATED EXIT GATE (OUT) - RIGHT SEPARATE AREA
+      ctx.fillStyle = "#7c3aed";
+      ctx.fillRect(640, 875, 180, 65);
+      ctx.strokeStyle = "#a855f7";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(640, 875, 180, 65);
+
+      // Exit Gate Kiosks
+      ctx.fillStyle = "#f59e0b";
+      ctx.fillRect(635, 860, 20, 30);
+      ctx.fillRect(805, 860, 20, 30);
+
+      // Exit Barrier Arm
+      ctx.strokeStyle = "#10b981";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(655, 880); ctx.lineTo(805, 880);
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("EXIT GATE 🚧 (OUT)", 660, 915);
 
       // 4. YELLOW DASHED PEDESTRIAN WALKWAY
       ctx.strokeStyle = "#eab308";

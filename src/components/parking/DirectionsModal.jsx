@@ -1,108 +1,103 @@
-import React, { useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Navigation, Flag, ArrowRight } from "lucide-react";
+import React, { useState } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Navigation, Layers, Box, X, MapPin, Footprints, CheckCircle2 } from "lucide-react";
+import SchematicTopView2D from "@/components/parking/SchematicTopView2D";
+import Floor3DView from "@/components/parking/Floor3DView";
 
-const CENTER = [12.9716, 77.5946];
-
-function parseCoord(code) {
-  // L1-A04 -> zone letter index, number
-  const m = code.match(/L\d-([A-Z])(\d+)/);
-  if (!m) return { z: 0, n: 0 };
-  return { z: m[1].charCodeAt(0) - 65, n: parseInt(m[2], 10) };
-}
-
-function slotLatLng(code) {
-  const { z, n } = parseCoord(code);
-  return [CENTER[0] + (n - 10) * 0.00022, CENTER[1] + (z - 1) * 0.00035];
-}
-
-const entranceIcon = L.divIcon({
-  className: "",
-  html: '<div style="background:#1d5fb0;color:#fff;border-radius:9999px;padding:4px 8px;font-size:11px;font-weight:600;box-shadow:0 4px 10px rgba(0,0,0,.3);white-space:nowrap">Entrance</div>',
-});
-const slotIcon = L.divIcon({
-  className: "",
-  html: '<div style="width:28px;height:28px;border-radius:50%;background:#10b981;border:3px solid #fff;box-shadow:0 4px 12px rgba(16,185,129,.6)"></div>',
-});
-
-function FitBounds({ points }) {
-  const map = useMap();
-  React.useEffect(() => {
-    if (points.length > 1) map.fitBounds(L.latLngBounds(points).pad(0.4), { animate: true });
-  }, [points, map]);
-  return null;
-}
-
-export default function DirectionsModal({ slot, onClose }) {
-  const entrance = [CENTER[0] - 0.001, CENTER[1] - 0.0012];
-  const dest = useMemo(() => (slot ? slotLatLng(slot.code) : null), [slot]);
-  const path = useMemo(() => {
-    if (!dest) return [];
-    // L-shaped route via a corner waypoint
-    return [entrance, [entrance[0], dest[1]], dest];
-  }, [dest]);
-
-  const steps = useMemo(() => {
-    if (!slot) return [];
-    const { z, n } = parseCoord(slot.code);
-    return [
-      { t: "Start at the mall entrance, Level " + slot.floor },
-      { t: "Walk straight past the main lobby" },
-      { t: `Turn toward Zone ${slot.zone}` },
-      { t: `Continue down aisle ${slot.zone} to row ${n}` },
-      { t: `Your slot ${slot.code} is on the right` },
-    ];
-  }, [slot]);
+export default function DirectionsModal({ slot, slots, selectedMall, onClose }) {
+  const [viewMode, setViewMode] = useState("2d"); // "2d" | "3d"
 
   if (!slot) return null;
 
-  return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl rounded-3xl p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-3" style={{ background: "linear-gradient(135deg,#0b1f3a,#1d5fb0)" }}>
-          <DialogTitle className="text-white flex items-center gap-2">
-            <Navigation className="w-4 h-4" /> Directions to {slot.code}
-          </DialogTitle>
-          <p className="text-sky-100/80 text-sm mt-1">
-            Level {slot.floor} · Zone {slot.zone} · {slot.vehicle_type.toUpperCase()}
-          </p>
-        </DialogHeader>
+  const targetCode = slot.code || "A-103";
+  const targetFloor = slot.floor || 1;
+  const targetZone = slot.zone || targetCode.charAt(0) || "A";
 
-        <div className="h-64 w-full">
-          <MapContainer center={CENTER} zoom={16} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; OpenStreetMap &copy; CARTO'
-            />
-            <Marker position={entrance} icon={entranceIcon}>
-              <Popup>Mall entrance</Popup>
-            </Marker>
-            <Marker position={dest} icon={slotIcon}>
-              <Popup>Slot {slot.code}</Popup>
-            </Marker>
-            <Polyline positions={path} pathOptions={{ color: "#10b981", weight: 5, opacity: 0.9, dashArray: "2 10" }} />
-            <FitBounds points={[entrance, dest]} />
-          </MapContainer>
+  return (
+    <Dialog open={!!slot} onOpenChange={onClose}>
+      <DialogContent className="max-w-5xl w-[96vw] max-h-[92vh] overflow-y-auto flex flex-col rounded-3xl border-2 border-purple-500/50 bg-card dark:bg-[#0b061a] p-3 sm:p-5 backdrop-blur-2xl shadow-[0_0_60px_rgba(168,85,247,0.3)] text-foreground dark:text-white">
+        {/* Top Header Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-border/80 dark:border-purple-900/40 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-purple-600/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 flex items-center justify-center font-extrabold text-base shadow-sm shrink-0">
+              🎯
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30">
+                  Wayfinding
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              </div>
+              <h2 className="text-base sm:text-lg font-extrabold text-foreground dark:text-white mt-0.5">
+                Spot <span className="text-purple-600 dark:text-purple-300 font-mono underline font-black">{targetCode}</span> · Level {targetFloor}
+              </h2>
+            </div>
+          </div>
+
+          {/* View Switcher Controls & Exit Button */}
+          <div className="flex items-center gap-1.5 font-mono">
+            <button
+              onClick={() => setViewMode("2d")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === "2d"
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                  : "bg-muted text-muted-foreground hover:text-foreground dark:bg-purple-950/60 dark:text-purple-300"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" /> <span className="hidden sm:inline">2D Blueprint</span><span className="sm:hidden">2D</span>
+            </button>
+            <button
+              onClick={() => setViewMode("3d")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === "3d"
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                  : "bg-muted text-muted-foreground hover:text-foreground dark:bg-purple-950/60 dark:text-purple-300"
+              }`}
+            >
+              <Box className="w-3.5 h-3.5" /> <span className="hidden sm:inline">3D WebGL</span><span className="sm:hidden">3D</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40 hover:bg-rose-500/30 transition-all cursor-pointer"
+            >
+              ✕ <span className="hidden sm:inline">Exit Route</span>
+            </button>
+          </div>
         </div>
 
-        <div className="p-6 space-y-3 max-h-60 overflow-y-auto">
-          {steps.map((s, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <div className="mt-0.5 w-7 h-7 shrink-0 rounded-full bg-sky-500/15 text-sky-600 dark:text-sky-300 flex items-center justify-center text-xs font-semibold">
-                {i + 1}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm">{s.t}</p>
-              </div>
-              {i < steps.length - 1 && <ArrowRight className="w-4 h-4 text-muted-foreground mt-1.5" />}
-            </div>
-          ))}
-          <div className="flex items-center gap-2 pt-2 text-emerald-600 dark:text-emerald-400 font-medium text-sm">
-            <Flag className="w-4 h-4" /> Arrived at {slot.code}
+        {/* Scrollable Map Viewport Container */}
+        <div className="w-full min-h-[420px] sm:min-h-[500px] h-[65vh] sm:h-[580px] rounded-2xl overflow-x-auto overflow-y-auto border border-border dark:border-purple-900/40 bg-black/40 relative my-2 shrink-0 shadow-inner">
+          {viewMode === "2d" ? (
+            <SchematicTopView2D
+              slots={slots || []}
+              highlightCode={targetCode}
+              isARGuide={true}
+              selectedFloor={targetFloor}
+              selectedMall={selectedMall}
+            />
+          ) : (
+            <Floor3DView
+              slots={slots || []}
+              highlightCode={targetCode}
+              isARGuide={true}
+              selectedFloor={targetFloor}
+              selectedMall={selectedMall}
+            />
+          )}
+        </div>
+
+        {/* Desktop Navigation Footer */}
+        <div className="hidden sm:flex p-3 rounded-2xl bg-purple-500/10 border border-purple-500/30 font-mono text-xs text-foreground dark:text-purple-200 items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-2">
+            <Footprints className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="truncate">
+              Enter via <strong>Entrance Gate (IN)</strong> → Follow corridor route to <strong>Zone {targetZone}</strong> → Park at <strong>{targetCode}</strong>.
+            </span>
           </div>
+          <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 shrink-0">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Wayfinding Active
+          </span>
         </div>
       </DialogContent>
     </Dialog>

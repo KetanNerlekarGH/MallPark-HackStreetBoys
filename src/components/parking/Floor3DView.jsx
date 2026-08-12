@@ -352,9 +352,11 @@ const GRID_SLOTS = [
 export default function Floor3DView({
   slots = [],
   highlightCode,
+  isARGuide = true,
   onSelect,
   selectedFloor: propSelectedFloor,
   setSelectedFloor: propSetSelectedFloor,
+  selectedMall,
 }) {
   const mountRef = useRef(null);
   const [internalSelectedFloor, setInternalSelectedFloor] = useState("1");
@@ -622,29 +624,89 @@ export default function Floor3DView({
         const isAvailable = status === "available";
         const isOccupied = status === "occupied";
         const isReserved = status === "reserved";
-        const isHighlighted = highlightCode && displayCode === highlightCode;
+        const cleanHighlight = (highlightCode || "").trim().toUpperCase();
+        const cleanCode = (code || "").trim().toUpperCase();
+        const cleanDisplay = (displayCode || "").trim().toUpperCase();
 
+        const isHighlighted = !!cleanHighlight && (cleanHighlight === cleanCode || cleanHighlight === cleanDisplay || cleanHighlight.includes(cleanCode));
+
+        // Color Priority: Occupied (Red) -> Reserved (Yellow) -> Handicapped (Blue) -> EV (Cyan) -> Available (Green)
         let neonColor = 0x10b981; // Green
         let statusBg = "#10b981";
-        if (is_handicapped) {
+        let groundColor = 0x0c1e20; // Available dark green ground
+
+        if (isOccupied) {
+          neonColor = 0xef4444; // RED
+          statusBg = "#ef4444";
+          groundColor = 0x3f121d; // Dark Red ground
+        } else if (isReserved) {
+          neonColor = 0xf59e0b; // YELLOW / GOLD
+          statusBg = "#f59e0b";
+          groundColor = 0x382408; // Dark Amber ground
+        } else if (is_handicapped) {
           neonColor = 0x3b82f6; // Blue
           statusBg = "#2563eb";
+          groundColor = 0x0e1b38;
         } else if (is_ev) {
           neonColor = 0x0284c7; // Cyan
           statusBg = "#0284c7";
-        } else if (isOccupied) {
-          neonColor = 0xef4444; // Red
-          statusBg = "#ef4444";
-        } else if (isReserved) {
-          neonColor = 0xf59e0b; // Gold
-          statusBg = "#f59e0b";
+          groundColor = 0x0a2233;
         }
-        if (isHighlighted) neonColor = 0xa855f7;
+
+        if (isHighlighted) {
+          neonColor = 0x38bdf8; // Neon Sky Blue Wayfinding
+          statusBg = "#0284c7";
+          groundColor = 0x0c2a4a;
+
+          // Glowing vertical 3D wayfinding beacon beam
+          const beaconGeo = new THREE.CylinderGeometry(0.2, 1.8, 12.0, 16);
+          const beaconMat = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.65,
+            side: THREE.DoubleSide,
+          });
+          const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
+          beaconMesh.position.set(x, yOff + 6.0, z);
+          scene.add(beaconMesh);
+
+          // Elevated 3D Wayfinding Straight Neon Line Segments
+          // Pedestrian AR Guide starts directly from Mall Main Elevator Lobby Building in Top Right (x=13.5, z=-14.0)
+          const waypoints = isARGuide
+            ? [
+                new THREE.Vector3(13.5, yOff + 0.35, -14.0), // Mall Main Elevator Lobby Building (Top Right)
+                new THREE.Vector3(x, yOff + 0.35, -14.0),    // Walk along North Cross Corridor to target column x
+                new THREE.Vector3(x, yOff + 0.35, z),        // Turn down target aisle to spot (x, z)
+              ]
+            : [
+                new THREE.Vector3(-7.5, yOff + 0.35, 24.0),  // Vehicle Entrance Gate (Bottom Left)
+                new THREE.Vector3(-7.5, yOff + 0.35, -14.0), // North Cross Corridor
+                new THREE.Vector3(x, yOff + 0.35, -14.0),    // Approach Corridor
+                new THREE.Vector3(x, yOff + 0.35, z),        // Target Spot
+              ];
+
+          const tubeMat = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.95,
+          });
+
+          for (let i = 0; i < waypoints.length - 1; i++) {
+            const p1 = waypoints[i];
+            const p2 = waypoints[i + 1];
+            if (p1.distanceTo(p2) > 0.1) {
+              const lineCurve = new THREE.LineCurve3(p1, p2);
+              const segGeo = new THREE.TubeGeometry(lineCurve, 8, 0.35, 12, false);
+              const segMesh = new THREE.Mesh(segGeo, tubeMat);
+              scene.add(segMesh);
+            }
+          }
+        }
 
         // HORIZONTAL BAY PLANE
         const bayGeo = new THREE.PlaneGeometry(4.4, 2.6);
         const bayMat = new THREE.MeshStandardMaterial({
-          color: isOccupied ? 0x1f1938 : isAvailable ? 0x0c1e20 : 0x18132b,
+          color: groundColor,
           roughness: 0.6,
           metalness: 0.3,
           side: THREE.DoubleSide,
@@ -1031,7 +1093,7 @@ export default function Floor3DView({
             </p>
           </div>
           <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground dark:text-white mt-0.5">
-            {String(selectedFloor).toLowerCase() === "all" ? "All 3 Floors Stacked 3D Model" : `Floor Level ${selectedFloor} · Zone A, B & C`}
+            {selectedMall?.name ? `${selectedMall.name} · ` : ""}{String(selectedFloor).toLowerCase() === "all" ? "All 3 Floors Stacked 3D Model" : `Floor Level ${selectedFloor} · Zone A, B & C`}
           </h3>
         </div>
 

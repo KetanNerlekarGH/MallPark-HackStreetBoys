@@ -55,13 +55,17 @@ export default function Layout() {
               </span>
             </Link>
 
-            {/* Location Display Pill */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 text-xs font-mono font-medium shadow-sm max-w-[200px] sm:max-w-none truncate pointer-events-none">
-              <MapPin className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+            {/* Clickable Mall Location Switcher Pill */}
+            <button
+              onClick={openLocationModal}
+              title="Click to switch State, City or Mall"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-purple-500/40 bg-purple-500/10 dark:bg-purple-950/40 hover:bg-purple-500/20 dark:hover:bg-purple-900/60 hover:border-purple-400 text-purple-600 dark:text-purple-300 text-xs font-mono font-medium shadow-sm max-w-[200px] sm:max-w-none truncate cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <MapPin className="w-3.5 h-3.5 text-purple-500 shrink-0 animate-bounce" />
               <span className="truncate">
-                {selectedState} · {selectedCity} · <strong className="font-semibold text-foreground dark:text-white">{selectedMall?.name}</strong>
+                {selectedState} · {selectedCity} · <strong className="font-semibold text-foreground dark:text-white underline decoration-purple-400 decoration-dotted underline-offset-2">{selectedMall?.name}</strong>
               </span>
-            </div>
+            </button>
 
             <nav className="hidden md:flex gap-1.5">
               {navItems.map((item) => {

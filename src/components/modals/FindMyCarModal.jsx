@@ -161,35 +161,94 @@ export default function FindMyCarModal({ isOpen, onClose, currentMall }) {
             <Button
               onClick={() => {
                 if (activeReservation) {
-                  window.dispatchEvent(new CustomEvent("start-ar-guide", { detail: activeReservation }));
+                  const targetCode = (activeReservation.slot_code || "A-103").toUpperCase();
+                  const targetFloor = Number(activeReservation.floor) || 1;
+                  window.dispatchEvent(
+                    new CustomEvent("start-ar-guide", {
+                      detail: {
+                        ...activeReservation,
+                        code: targetCode,
+                        slot_code: targetCode,
+                        floor: targetFloor,
+                        zone: targetCode.charAt(0),
+                        isARGuide: true,
+                      },
+                    })
+                  );
                 }
                 onClose();
               }}
-              className="w-full h-12 font-bold text-xs rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-[0_0_25px_rgba(168,85,247,0.45)] flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
+              className="w-full h-12 font-bold text-xs rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-[0_0_25px_rgba(168,85,247,0.45)] flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform cursor-pointer"
             >
-              <Navigation className="w-4 h-4" /> Start AR Walking Guide
+              <Navigation className="w-4 h-4" /> Start Wayfinding Guide to My Car
             </Button>
           </div>
         ) : (
-          <div className="py-8 text-center space-y-3 font-mono">
-            <div className="w-14 h-14 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center mx-auto">
-              <Ticket className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white">No Active Parking Booking Found</h3>
-              <p className="text-xs text-purple-300/70 mt-1 max-w-xs mx-auto">
-                You do not have an active vehicle booking right now. Vehicle tracking is only available while a parking session is active before it expires.
-              </p>
-            </div>
-            <Button
-              onClick={onClose}
-              className="px-6 h-10 font-bold text-xs rounded-full bg-purple-600 text-white"
-            >
-              Reserve a Slot Now
-            </Button>
-          </div>
+          <ManualVehicleLocator onClose={onClose} />
         )}
       </div>
+    </div>
+  );
+}
+
+function ManualVehicleLocator({ onClose }) {
+  const [slotInput, setSlotInput] = useState("A-103");
+  const [vehicleInput, setVehicleInput] = useState("MH-12-MP-8899");
+
+  const handleLocate = () => {
+    const code = slotInput.trim().toUpperCase() || "A-103";
+    const floor = parseInt(code.match(/-\d/)?.[0]?.replace("-", "") || "1", 10);
+    window.dispatchEvent(
+      new CustomEvent("start-ar-guide", {
+        detail: {
+          code: code,
+          slot_code: code,
+          floor: floor,
+          zone: code.charAt(0) || "A",
+          isARGuide: true,
+          vehicle_number: vehicleInput.trim().toUpperCase() || "MH-12-MP-8899",
+        },
+      })
+    );
+    onClose();
+  };
+
+  return (
+    <div className="py-2 space-y-4 font-mono">
+      <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-200 text-xs leading-relaxed">
+        🔍 <strong>Locate Parked Vehicle:</strong> Enter your parking slot code (e.g. <strong>A-103</strong>, <strong>B-112</strong>) or plate number below to trigger entrance-to-spot wayfinding:
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <label className="text-[11px] text-purple-300 uppercase font-bold pl-1">Parking Bay Code</label>
+          <input
+            type="text"
+            value={slotInput}
+            onChange={(e) => setSlotInput(e.target.value)}
+            placeholder="e.g. A-103, B-112, C-121"
+            className="w-full h-11 px-4 mt-1 rounded-2xl bg-purple-950/40 border border-purple-500/40 text-white font-mono text-sm uppercase focus:outline-none focus:border-purple-400"
+          />
+        </div>
+
+        <div>
+          <label className="text-[11px] text-purple-300 uppercase font-bold pl-1">Vehicle Plate Number (Optional)</label>
+          <input
+            type="text"
+            value={vehicleInput}
+            onChange={(e) => setVehicleInput(e.target.value)}
+            placeholder="e.g. MH-12-MP-8899"
+            className="w-full h-11 px-4 mt-1 rounded-2xl bg-purple-950/40 border border-purple-500/40 text-white font-mono text-sm uppercase focus:outline-none focus:border-purple-400"
+          />
+        </div>
+      </div>
+
+      <Button
+        onClick={handleLocate}
+        className="w-full h-12 font-bold text-xs rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-[0_0_25px_rgba(168,85,247,0.45)] flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform cursor-pointer"
+      >
+        <Navigation className="w-4 h-4 text-emerald-400" /> Locate &amp; Start Wayfinding Route
+      </Button>
     </div>
   );
 }

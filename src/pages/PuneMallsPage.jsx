@@ -66,10 +66,10 @@ export default function PuneMallsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         <div className="lg:col-span-3 space-y-4">
           {/* Floor Level Switcher Pills */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0d071e]/90 p-2 rounded-2xl border border-purple-500/30 backdrop-blur-xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-card dark:bg-[#0d071e]/90 p-2 rounded-2xl border border-border dark:border-purple-500/30 backdrop-blur-xl shadow-sm">
             <div className="flex items-center gap-2 font-mono">
-              <Layers className="w-4 h-4 text-purple-400 ml-2" />
-              <span className="text-xs font-bold text-purple-200 mr-2">SELECT FLOOR:</span>
+              <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400 ml-2" />
+              <span className="text-xs font-bold text-foreground dark:text-purple-200 mr-2">SELECT FLOOR:</span>
               {floorsList.map((fl) => (
                 <button
                   key={fl.id}
@@ -80,7 +80,7 @@ export default function PuneMallsPage() {
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                     activeFloor === fl.id
                       ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_0_18px_rgba(168,85,247,0.45)]"
-                      : "bg-purple-950/40 text-purple-300 hover:bg-purple-900/40 hover:text-white border border-purple-500/20"
+                      : "bg-muted text-muted-foreground hover:text-foreground dark:bg-purple-950/40 dark:text-purple-300 dark:hover:bg-purple-900/40 dark:hover:text-white border border-border dark:border-purple-500/20"
                   }`}
                 >
                   {fl.label}
@@ -88,8 +88,8 @@ export default function PuneMallsPage() {
               ))}
             </div>
 
-            <div className="text-xs text-purple-300/80 bg-purple-950/40 px-3 py-1.5 rounded-xl border border-purple-500/30 flex items-center gap-2">
-              <Info className="w-3.5 h-3.5 text-sky-400" />
+            <div className="text-xs text-muted-foreground dark:text-purple-300/80 bg-muted/50 dark:bg-purple-950/40 px-3 py-1.5 rounded-xl border border-border dark:border-purple-500/30 flex items-center gap-2">
+              <Info className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
               <span>Tap any store zone to highlight &amp; trigger AR wayfinding route</span>
             </div>
           </div>
@@ -104,10 +104,10 @@ export default function PuneMallsPage() {
 
         {/* Right Sidebar: Selected Store / Outlet Directory Inspector */}
         <div className="space-y-4 font-mono">
-          <Card className="border border-purple-500/40 bg-[#0d071e]/95 text-white shadow-[0_0_30px_rgba(168,85,247,0.15)]">
-            <CardHeader className="pb-3 border-b border-purple-500/20">
-              <CardTitle className="text-sm font-extrabold flex items-center gap-2 text-purple-200">
-                <Store className="w-4 h-4 text-purple-400" />
+          <Card className="border border-border dark:border-purple-500/40 bg-card dark:bg-[#0d071e]/95 text-card-foreground dark:text-white shadow-xl dark:shadow-[0_0_30px_rgba(168,85,247,0.15)]">
+            <CardHeader className="pb-3 border-b border-border dark:border-purple-500/20">
+              <CardTitle className="text-sm font-extrabold flex items-center gap-2 text-foreground dark:text-purple-200">
+                <Store className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 {selectedStore ? selectedStore.name : "Outlet Inspector"}
               </CardTitle>
             </CardHeader>
@@ -120,43 +120,43 @@ export default function PuneMallsPage() {
                         className="w-3.5 h-3.5 rounded-full shrink-0"
                         style={{ backgroundColor: selectedStore.color }}
                       />
-                      <span className="text-xs font-extrabold text-white">
+                      <span className="text-xs font-extrabold text-foreground dark:text-white">
                         {selectedStore.name}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-300 border border-purple-500/30">
                       Floor {selectedStore.floor}
                     </span>
                   </div>
 
-                  <p className="text-xs text-purple-200/80 leading-relaxed font-sans">
+                  <p className="text-xs text-muted-foreground dark:text-purple-200/80 leading-relaxed font-sans">
                     {selectedStore.description}
                   </p>
 
-                  <div className="space-y-2 text-xs text-purple-300/80 border-t border-b border-purple-500/20 py-3">
+                  <div className="space-y-2 text-xs text-muted-foreground dark:text-purple-300/80 border-t border-b border-border dark:border-purple-500/20 py-3">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-purple-300">
-                        <Tag className="w-3.5 h-3.5 text-purple-400" /> Category:
+                      <span className="flex items-center gap-1.5 text-muted-foreground dark:text-purple-300">
+                        <Tag className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Category:
                       </span>
-                      <span className="font-bold text-white">{selectedStore.category}</span>
+                      <span className="font-bold text-foreground dark:text-white">{selectedStore.category}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-purple-300">
-                        <MapPin className="w-3.5 h-3.5 text-purple-400" /> Zone:
+                      <span className="flex items-center gap-1.5 text-muted-foreground dark:text-purple-300">
+                        <MapPin className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Zone:
                       </span>
-                      <span className="font-bold text-white">{selectedStore.zone}</span>
+                      <span className="font-bold text-foreground dark:text-white">{selectedStore.zone}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-purple-300">
-                        <Clock className="w-3.5 h-3.5 text-amber-400" /> Hours:
+                      <span className="flex items-center gap-1.5 text-muted-foreground dark:text-purple-300">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" /> Hours:
                       </span>
-                      <span className="font-bold text-emerald-400">{selectedStore.hours}</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">{selectedStore.hours}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-purple-300">
-                        <Phone className="w-3.5 h-3.5 text-purple-400" /> Contact:
+                      <span className="flex items-center gap-1.5 text-muted-foreground dark:text-purple-300">
+                        <Phone className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Contact:
                       </span>
-                      <span className="font-mono text-white">{selectedStore.phone}</span>
+                      <span className="font-mono text-foreground dark:text-white">{selectedStore.phone}</span>
                     </div>
                   </div>
 

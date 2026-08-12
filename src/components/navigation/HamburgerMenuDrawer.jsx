@@ -18,55 +18,51 @@ export default function HamburgerMenuDrawer() {
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md transition-opacity duration-300"
+          className="fixed inset-0 z-[9999] bg-black/60 dark:bg-black/90 backdrop-blur-md transition-opacity duration-300"
         />
       )}
 
-      {/* Slide-out Drawer Panel (From Left) - 100% Solid & Opaque via Portal */}
+      {/* Slide-out Drawer Panel (From Left) - Adapts to Light and Dark Themes */}
       <div
-        style={{ backgroundColor: "#090414", opacity: 1 }}
-        className={`fixed top-0 left-0 bottom-0 z-[10000] w-80 max-w-[85vw] bg-[#090414] opacity-100 border-r border-purple-500/50 p-6 shadow-[20px_0_60px_rgba(0,0,0,0.98)] text-white flex flex-col justify-between transition-transform duration-300 ease-out ${isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 bottom-0 z-[10000] w-80 max-w-[85vw] bg-card text-foreground dark:bg-[#090414] dark:text-white border-r border-border dark:border-purple-500/50 p-6 shadow-2xl transition-transform duration-300 ease-out flex flex-col justify-between ${isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
-        {/* Solid Background Fill */}
-        <div className="absolute inset-0 bg-[#090414] z-0 pointer-events-none" style={{ backgroundColor: "#090414" }} />
-
         <div className="relative z-10 space-y-6">
 
           {/* Top Brand Header & Close Button */}
-          <div className="flex items-center justify-between border-b border-purple-900/40 pb-4">
+          <div className="flex items-center justify-between border-b border-border dark:border-purple-900/40 pb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#170a35] border border-purple-500/50 p-1 flex items-center justify-center shadow-[0_0_18px_rgba(168,85,247,0.4)]">
+              <div className="w-9 h-9 rounded-xl overflow-hidden bg-purple-900/20 dark:bg-[#170a35] border border-purple-500/50 p-1 flex items-center justify-center shadow-[0_0_18px_rgba(168,85,247,0.4)]">
                 <img
                   src="/logo.png"
                   alt="MallPark Logo"
                   className="w-full h-full object-contain filter drop-shadow-[0_0_6px_rgba(168,85,247,0.6)]"
                 />
               </div>
-              <span className="font-extrabold text-lg tracking-tight text-white">
+              <span className="font-extrabold text-lg tracking-tight text-foreground dark:text-white">
                 MallPark
               </span>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="w-8 h-8 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 flex items-center justify-center hover:bg-purple-500/20 transition-all"
+              className="w-8 h-8 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-600 dark:text-purple-300 flex items-center justify-center hover:bg-purple-500/20 transition-all"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Mall Location Status Pill */}
-          <div className="p-3 rounded-2xl bg-purple-950/40 border border-purple-500/30 font-mono text-xs text-purple-200/90 flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-purple-400 shrink-0" />
+          <div className="p-3 rounded-2xl bg-purple-500/10 dark:bg-purple-950/40 border border-purple-500/30 font-mono text-xs text-foreground dark:text-purple-200/90 flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
             <div className="truncate">
-              <div className="text-[10px] text-purple-300/60 uppercase">You are at</div>
-              <div className="font-bold text-white truncate">{selectedMall?.name || "Phoenix Marketcity"}</div>
+              <div className="text-[10px] text-muted-foreground dark:text-purple-300/60 uppercase font-semibold">You are at</div>
+              <div className="font-bold text-foreground dark:text-white truncate">{selectedMall?.name || "Phoenix Marketcity"}</div>
             </div>
           </div>
 
           {/* QUICK FEATURES SECTION */}
           <div className="space-y-3 font-mono">
-            <div className="text-[11px] text-purple-300/60 uppercase tracking-widest pl-1">
+            <div className="text-[11px] text-muted-foreground dark:text-purple-300/60 uppercase tracking-widest pl-1 font-bold">
               Quick Smart Features
             </div>
 
@@ -76,21 +72,21 @@ export default function HamburgerMenuDrawer() {
                 setIsOpen(false);
                 setActiveModal("sos");
               }}
-              className="w-full p-3.5 rounded-2xl border border-rose-500/40 bg-gradient-to-r from-rose-950/50 via-[#1d0710]/80 to-purple-950/40 hover:border-rose-500 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-[0_0_20px_rgba(244,63,94,0.15)] cursor-pointer"
+              className="w-full p-3.5 rounded-2xl border border-rose-300 dark:border-rose-500/40 bg-rose-50/90 dark:bg-gradient-to-r dark:from-rose-950/50 dark:via-[#1d0710]/80 dark:to-purple-950/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm dark:shadow-[0_0_20px_rgba(244,63,94,0.15)] cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center shadow-[0_0_12px_rgba(244,63,94,0.4)] group-hover:animate-bounce">
+                <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-sm group-hover:animate-bounce">
                   <PhoneCall className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-bold text-white uppercase flex items-center gap-1.5">
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase flex items-center gap-1.5">
                     Emergency Call
                     <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                   </div>
-                  <div className="text-[10px] text-rose-300/70">SOS Security & Helpline</div>
+                  <div className="text-[10px] text-rose-700 dark:text-rose-300/80 font-medium">SOS Security & Helpline</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-rose-400 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-rose-600 dark:text-rose-400 group-hover:translate-x-1 transition-transform" />
             </button>
 
             {/* 2. VALET PARKING SERVICE FEATURE */}
@@ -99,18 +95,18 @@ export default function HamburgerMenuDrawer() {
                 setIsOpen(false);
                 setActiveModal("valet");
               }}
-              className="w-full p-3.5 rounded-2xl border border-purple-500/40 bg-gradient-to-r from-purple-950/50 via-[#170933]/80 to-indigo-950/40 hover:border-purple-400 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-[0_0_20px_rgba(168,85,247,0.15)] cursor-pointer"
+              className="w-full p-3.5 rounded-2xl border border-purple-300 dark:border-purple-500/40 bg-purple-50/90 dark:bg-gradient-to-r dark:from-purple-950/50 dark:via-[#170933]/80 dark:to-indigo-950/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm dark:shadow-[0_0_20px_rgba(168,85,247,0.15)] cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center shadow-[0_0_12px_rgba(168,85,247,0.4)]">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-600 dark:text-purple-300 flex items-center justify-center shadow-sm">
                   <CarFront className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-bold text-white uppercase">Valet Parking</div>
-                  <div className="text-[10px] text-purple-300/70">VIP Concierge & Pickup</div>
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase">Valet Parking</div>
+                  <div className="text-[10px] text-purple-700 dark:text-purple-300/80 font-medium">VIP Concierge & Pickup</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-purple-300 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-purple-600 dark:text-purple-300 group-hover:translate-x-1 transition-transform" />
             </button>
 
             {/* 3. FIND MY CAR FEATURE */}
@@ -119,27 +115,27 @@ export default function HamburgerMenuDrawer() {
                 setIsOpen(false);
                 setActiveModal("find-car");
               }}
-              className="w-full p-3.5 rounded-2xl border border-sky-500/40 bg-gradient-to-r from-sky-950/40 via-[#07192a]/80 to-purple-950/40 hover:border-sky-400 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-[0_0_20px_rgba(14,165,233,0.15)] cursor-pointer"
+              className="w-full p-3.5 rounded-2xl border border-sky-300 dark:border-sky-500/40 bg-sky-50/90 dark:bg-gradient-to-r dark:from-sky-950/40 dark:via-[#07192a]/80 dark:to-purple-950/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm dark:shadow-[0_0_20px_rgba(14,165,233,0.15)] cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center shadow-[0_0_12px_rgba(14,165,233,0.4)]">
+                <div className="w-9 h-9 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-600 dark:text-sky-400 flex items-center justify-center shadow-sm">
                   <Car className="w-4 h-4" />
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-bold text-white uppercase">Find My Car</div>
-                  <div className="text-[10px] text-sky-300/70">Active Parking Locator</div>
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase">Find My Car</div>
+                  <div className="text-[10px] text-sky-700 dark:text-sky-300/80 font-medium">Active Parking Locator</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-sky-400 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-4 h-4 text-sky-600 dark:text-sky-400 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
           {/* Quick Nav Section */}
-          <div className="space-y-2 pt-2 border-t border-purple-900/40 font-mono text-xs">
+          <div className="space-y-2 pt-2 border-t border-border dark:border-purple-900/40 font-mono text-xs">
             <Link
               to="/select-location"
               onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 transition-colors"
+              className="flex items-center justify-between p-3 rounded-xl bg-muted dark:bg-purple-500/10 hover:bg-accent dark:hover:bg-purple-500/20 text-foreground dark:text-purple-200 transition-colors font-medium"
             >
               <span>📍 Switch State / City / Mall</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -149,7 +145,7 @@ export default function HamburgerMenuDrawer() {
         </div>
 
         {/* Drawer Footer */}
-        <div className="relative z-10 pt-4 border-t border-purple-900/40 text-center font-mono text-[11px] text-purple-300/50">
+        <div className="relative z-10 pt-4 border-t border-border dark:border-purple-900/40 text-center font-mono text-[11px] text-muted-foreground dark:text-purple-300/50">
           Built By the Hackstreet Boys
         </div>
       </div>
