@@ -544,7 +544,7 @@ export default function Floor3DView({
           const isAvailable = slot.status === "available";
           const isOccupied = slot.status === "occupied";
           const isReserved = slot.status === "reserved";
-          const isHandicapped = slot.is_handicapped || slot.code === "A-101" || slot.code === "A-102";
+          const isHandicapped = slot.is_handicapped || slot.code?.endsWith("21") || slot.code?.endsWith("22");
           const isHighlighted = highlightCode && slot.code === highlightCode;
 
           // 3D Bay Ground Box

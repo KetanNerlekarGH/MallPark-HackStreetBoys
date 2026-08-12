@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Zap, Navigation, Sparkles } from "lucide-react";
 
-export default function SmartSuggest({ slots, floor, onNavigate, onReserve }) {
+export default function SmartSuggest({ slots, floor, onNavigate, onReserve, activeDirections }) {
   const suggestion = useMemo(() => {
     const free = slots
       .filter((s) => s.status === "available")
@@ -12,6 +12,8 @@ export default function SmartSuggest({ slots, floor, onNavigate, onReserve }) {
   }, [slots]);
 
   if (!suggestion) return null;
+
+  const isNavigatingThis = activeDirections && activeDirections.code === suggestion.code;
 
   return (
     <div className="animated-purple-border-wrapper shadow-[0_0_40px_rgba(168,85,247,0.25)] rounded-3xl">
@@ -39,9 +41,17 @@ export default function SmartSuggest({ slots, floor, onNavigate, onReserve }) {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => onNavigate(suggestion)}
-            className="btn-shimmer-effect flex items-center gap-2 px-6 h-11 rounded-full bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 text-white text-sm font-semibold shadow-[0_0_20px_rgba(124,58,237,0.35)] dark:shadow-[0_0_25px_rgba(124,58,237,0.45)] hover:shadow-[0_0_35px_rgba(147,51,234,0.75)] hover:scale-[1.03] active:scale-[0.97] transition-all duration-300"
+            className={`btn-shimmer-effect flex items-center gap-2 px-6 h-11 rounded-full text-sm font-semibold transition-all duration-300 ${
+              isNavigatingThis
+                ? "bg-rose-600 text-white shadow-[0_0_25px_rgba(244,63,94,0.55)] hover:bg-rose-700 hover:scale-[1.03]"
+                : "bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] dark:shadow-[0_0_25px_rgba(124,58,237,0.45)] hover:shadow-[0_0_35px_rgba(147,51,234,0.75)] hover:scale-[1.03] active:scale-[0.97]"
+            }`}
           >
-            <Navigation className="w-4 h-4 transition-transform group-hover:rotate-45" /> Get directions
+            {isNavigatingThis ? (
+              <>✕ Quit Directions</>
+            ) : (
+              <><Navigation className="w-4 h-4 transition-transform group-hover:rotate-45" /> Get directions</>
+            )}
           </button>
           <button
             onClick={() => onReserve(suggestion)}

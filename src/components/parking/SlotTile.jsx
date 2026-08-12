@@ -14,7 +14,7 @@ const icons = { car: Car, bike: Bike, suv: Truck };
 export default function SlotTile({ slot, onSelect }) {
   const { toast } = useToast();
   const Icon = icons[slot.vehicle_type] || Car;
-  const isHandicapped = slot.code === "A-101" || slot.code === "A-102" || slot.is_handicapped;
+  const isHandicapped = slot.code?.endsWith("21") || slot.code?.endsWith("22") || slot.is_handicapped;
   const disabled = slot.status === "occupied" || slot.status === "reserved";
 
   const handleClick = () => {

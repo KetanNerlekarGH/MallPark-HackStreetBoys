@@ -30,15 +30,16 @@ export default function Dashboard() {
     const { toast } = useToast();
 
     useEffect(() => {
+        const currentMallId = selectedMall?.id || "default";
         Promise.all([
-            base44.entities.ParkingSlot.list("code", 500),
-            base44.entities.Reservation.list("-created_date", 100),
+            base44.entities.ParkingSlot.list("code", 500, currentMallId),
+            base44.entities.Reservation.list("-created_date", 100, currentMallId),
         ]).then(([dSlots, dReservations]) => {
             const now = Date.now();
             const activeReservedCodes = new Set();
 
             (dReservations || []).forEach((r) => {
-                if (r.status === "active") {
+                if (r.status === "active" && (!r.mall_id || r.mall_id === currentMallId)) {
                     const created = new Date(r.created_at || r.created_date || now).getTime();
                     const expiry = r.expires_at ? new Date(r.expires_at).getTime() : created + (r.hours || 2) * 3600 * 1000;
                     if (now < expiry && r.slot_code) {
@@ -49,16 +50,12 @@ export default function Dashboard() {
 
             const updated = (dSlots || []).map((s) => {
                 const normCode = s.code ? s.code.toUpperCase() : "";
-                const isReserved =
-                    s.status === "reserved" ||
-                    activeReservedCodes.has(normCode) ||
-                    normCode === "A-101" ||
-                    normCode === "A-102";
+                const isExplicitlyReserved = activeReservedCodes.has(normCode);
 
                 return {
                     ...s,
                     hourly_rate: selectedMall?.hourlyRate || s.hourly_rate || 40,
-                    status: isReserved ? "reserved" : "available",
+                    status: isExplicitlyReserved ? "reserved" : s.status === "occupied" ? "occupied" : "available",
                 };
             });
 
@@ -108,6 +105,7 @@ export default function Dashboard() {
     const reserve = async ({ slot, hours, vehicleNumber, fee }) => {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + hours * 3600 * 1000);
+        const currentMallId = selectedMall?.id || "default";
         try {
             await base44.entities.Reservation.create({
                 slot_code: slot.code,
@@ -118,10 +116,12 @@ export default function Dashboard() {
                 estimated_fee: fee,
                 is_ev: !!slot.is_ev,
                 status: "active",
+                mall_id: currentMallId,
+                mall_name: selectedMall?.name || "Mall",
                 created_at: now.toISOString(),
                 expires_at: expiresAt.toISOString(),
             });
-            await base44.entities.ParkingSlot.update(slot.code || slot.id, { status: "reserved" });
+            await base44.entities.ParkingSlot.update(slot.code || slot.id, { status: "reserved" }, currentMallId);
         } catch (err) {
             console.warn("Reservation API update skipped:", err);
         }
@@ -172,8 +172,32 @@ export default function Dashboard() {
             }
         };
 
+        const handleTerminateValetBooking = (e) => {
+            const { slotId } = e.detail || {};
+            if (!slotId) return;
+            const normCode = slotId.toUpperCase();
+            const currentMallId = selectedMall?.id || "default";
+
+            setSlots((prev) =>
+                prev.map((s) => (s.code.toUpperCase() === normCode ? { ...s, status: "available" } : s))
+            );
+
+            try {
+                base44.entities.ParkingSlot.update(normCode, { status: "available" }, currentMallId);
+            } catch (err) {}
+
+            toast({
+                title: `🚘 Valet Pickup Completed`,
+                description: `Vehicle from spot ${normCode} has exited the facility. Booking terminated and spot is now Available!`,
+            });
+        };
+
         window.addEventListener("start-ar-guide", handleStartARGuide);
-        return () => window.removeEventListener("start-ar-guide", handleStartARGuide);
+        window.addEventListener("terminate-valet-booking", handleTerminateValetBooking);
+        return () => {
+            window.removeEventListener("start-ar-guide", handleStartARGuide);
+            window.removeEventListener("terminate-valet-booking", handleTerminateValetBooking);
+        };
     }, []);
 
     const getGreeting = () => {
@@ -224,8 +248,9 @@ export default function Dashboard() {
             <SmartSuggest
                 slots={floorSlots}
                 floor={floor}
-                onNavigate={(s) => setDirections(s)}
+                onNavigate={(s) => setDirections((prev) => (prev?.code === s.code ? null : s))}
                 onReserve={setSelected}
+                activeDirections={directions}
             />
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -291,7 +316,7 @@ export default function Dashboard() {
                 <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" /> Available</span>
                 <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" /> Occupied</span>
                 <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" /> Reserved</span>
-                <span className="flex items-center gap-2"><span className="text-amber-400 font-bold">♿</span> Handicapped (A-101, A-102)</span>
+                <span className="flex items-center gap-2"><span className="text-amber-400 font-bold">♿</span> Handicapped (C-121, C-122)</span>
                 <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" /> EV charging</span>
             </div>
 
@@ -302,6 +327,7 @@ export default function Dashboard() {
                     isARGuide={!!directions?.isARGuide}
                     onSelect={setSelected}
                     onSlotStateChange={handleSlotStateChange}
+                    onClearDirections={() => setDirections(null)}
                     selectedFloor={floor}
                 />
             )}

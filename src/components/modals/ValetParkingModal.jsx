@@ -16,6 +16,12 @@ export default function ValetParkingModal({ isOpen, onClose, currentMall }) {
     const id = "VALET-" + Math.floor(1000 + Math.random() * 9000);
     setPassId(id);
     setRequested(true);
+
+    window.dispatchEvent(
+      new CustomEvent("dispatch-valet-pickup", {
+        detail: { vehicleNo, pickupGate }
+      })
+    );
   };
 
   return (
