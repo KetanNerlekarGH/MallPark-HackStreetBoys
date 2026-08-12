@@ -60,7 +60,8 @@ export const PARKING_SLOTS_WAYPOINTS = {
  * Calculates complete multi-waypoint driving corridor routes for a slot ID.
  */
 export function getVehicleWaypoints(slotId) {
-  const info = PARKING_SLOTS_WAYPOINTS[slotId] || PARKING_SLOTS_WAYPOINTS["A-103"];
+  const normKey = slotId ? slotId.replace(/([A-Z])-(\d)(\d\d)/, "$1-1$3") : "A-103";
+  const info = PARKING_SLOTS_WAYPOINTS[slotId] || PARKING_SLOTS_WAYPOINTS[normKey] || PARKING_SLOTS_WAYPOINTS["A-103"];
   const isEastSide = info.zone === "B_RIGHT" || info.zone === "C";
 
   let entryWaypoints = [];

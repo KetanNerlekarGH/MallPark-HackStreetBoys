@@ -8,7 +8,6 @@ import ReserveDialog from "@/components/parking/ReserveDialog";
 import SmartSuggest from "@/components/parking/SmartSuggest";
 import Floor3DView from "@/components/parking/Floor3DView";
 import SchematicTopView2D from "@/components/parking/SchematicTopView2D";
-import DirectionsModal from "@/components/parking/DirectionsModal";
 import { useToast } from "@/components/ui/use-toast";
 import { useLocationContext } from "@/context/LocationContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -31,13 +30,54 @@ export default function Dashboard() {
     const { toast } = useToast();
 
     useEffect(() => {
-        base44.entities.ParkingSlot.list("code", 500).then((d) => {
-            // Initialize slots with mall custom rates and set default available state
-            const updated = d.map((s) => ({
-                ...s,
-                hourly_rate: selectedMall?.hourlyRate || s.hourly_rate || 40,
-                status: (s.code === "A-101" || s.code === "A-102" || s.status === "reserved") ? "reserved" : "available",
-            }));
+        Promise.all([
+            base44.entities.ParkingSlot.list("code", 500),
+            base44.entities.Reservation.list("-created_date", 100),
+        ]).then(([dSlots, dReservations]) => {
+            const now = Date.now();
+            const activeReservedCodes = new Set();
+
+            (dReservations || []).forEach((r) => {
+                if (r.status === "active") {
+                    const created = new Date(r.created_at || r.created_date || now).getTime();
+                    const expiry = r.expires_at ? new Date(r.expires_at).getTime() : created + (r.hours || 2) * 3600 * 1000;
+                    if (now < expiry && r.slot_code) {
+                        activeReservedCodes.add(r.slot_code.toUpperCase());
+                    }
+                }
+            });
+
+            const updated = (dSlots || []).map((s) => {
+                const normCode = s.code ? s.code.toUpperCase() : "";
+                const isReserved =
+                    s.status === "reserved" ||
+                    activeReservedCodes.has(normCode) ||
+                    normCode === "A-101" ||
+                    normCode === "A-102";
+
+                return {
+                    ...s,
+                    hourly_rate: selectedMall?.hourlyRate || s.hourly_rate || 40,
+                    status: isReserved ? "reserved" : "available",
+                };
+            });
+
+            activeReservedCodes.forEach((code) => {
+                const exists = updated.some((s) => s.code.toUpperCase() === code);
+                if (!exists) {
+                    const floorNum = parseInt(code.match(/-\d/)?.[0]?.replace("-", "") || "1", 10);
+                    updated.push({
+                        id: code,
+                        code: code,
+                        floor: floorNum,
+                        zone: code.charAt(0),
+                        status: "reserved",
+                        hourly_rate: selectedMall?.hourlyRate || 40,
+                        vehicle_type: "car",
+                    });
+                }
+            });
+
             setSlots(updated);
             setLoading(false);
         });
@@ -68,23 +108,73 @@ export default function Dashboard() {
     const reserve = async ({ slot, hours, vehicleNumber, fee }) => {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + hours * 3600 * 1000);
-        await base44.entities.Reservation.create({
-            slot_code: slot.code,
-            floor: slot.floor,
-            vehicle_type: slot.vehicle_type,
-            vehicle_number: vehicleNumber,
-            hours,
-            estimated_fee: fee,
-            is_ev: !!slot.is_ev,
-            status: "active",
-            created_at: now.toISOString(),
-            expires_at: expiresAt.toISOString(),
+        try {
+            await base44.entities.Reservation.create({
+                slot_code: slot.code,
+                floor: slot.floor,
+                vehicle_type: slot.vehicle_type,
+                vehicle_number: vehicleNumber,
+                hours,
+                estimated_fee: fee,
+                is_ev: !!slot.is_ev,
+                status: "active",
+                created_at: now.toISOString(),
+                expires_at: expiresAt.toISOString(),
+            });
+            await base44.entities.ParkingSlot.update(slot.code || slot.id, { status: "reserved" });
+        } catch (err) {
+            console.warn("Reservation API update skipped:", err);
+        }
+
+        const normalizedCode = slot.code.toUpperCase();
+        setSlots((prevSlots) => {
+            const exists = prevSlots.some(
+                (s) => (s.id && s.id === slot.id) || s.code.toUpperCase() === normalizedCode
+            );
+            if (!exists) {
+                return [
+                    ...prevSlots,
+                    {
+                        id: slot.id || normalizedCode,
+                        code: slot.code,
+                        floor: slot.floor || 1,
+                        zone: slot.zone || slot.code.charAt(0),
+                        status: "reserved",
+                        hourly_rate: slot.hourly_rate || 40,
+                        vehicle_type: slot.vehicle_type || "car",
+                    },
+                ];
+            }
+            return prevSlots.map((s) =>
+                (s.id && s.id === slot.id) || s.code.toUpperCase() === normalizedCode
+                    ? { ...s, status: "reserved" }
+                    : s
+            );
         });
-        await base44.entities.ParkingSlot.update(slot.id, { status: "reserved" });
-        setSlots((prev) => prev.map((s) => (s.id === slot.id ? { ...s, status: "reserved" } : s)));
+
         setSelected(null);
-        toast({ title: `Slot ${slot.code} reserved`, description: `Estimated fee ₹${fee}` });
+        toast({
+            title: `Slot ${slot.code} Reserved`,
+            description: `Spot ${slot.code} has been marked as Reserved (Yellow). Fee: ₹${fee}`,
+        });
     };
+
+    useEffect(() => {
+        const handleStartARGuide = (e) => {
+            const res = e.detail;
+            if (res && res.slot_code) {
+                const targetCode = res.slot_code;
+                const targetFloor = Number(res.floor) || 1;
+                
+                setViewMode("2d");
+                setFloor(targetFloor);
+                setDirections({ code: targetCode, isARGuide: true, ...res });
+            }
+        };
+
+        window.addEventListener("start-ar-guide", handleStartARGuide);
+        return () => window.removeEventListener("start-ar-guide", handleStartARGuide);
+    }, []);
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -97,6 +187,8 @@ export default function Dashboard() {
     const handleSlotStateChange = (slotCode, newStatus) => {
         if (!slotCode) return;
         const normalizedCode = slotCode.trim().toUpperCase();
+        const detectedFloor = parseInt(normalizedCode.match(/-\d/)?.[0]?.replace("-", "") || "1", 10);
+
         setSlots((prevSlots) => {
             const exists = prevSlots.some((s) => s.code.toUpperCase() === normalizedCode);
             if (!exists) {
@@ -105,7 +197,7 @@ export default function Dashboard() {
                     {
                         id: normalizedCode,
                         code: normalizedCode,
-                        floor: 1,
+                        floor: detectedFloor,
                         zone: normalizedCode.charAt(0),
                         status: newStatus,
                         hourly_rate: 40,
@@ -207,8 +299,10 @@ export default function Dashboard() {
                 <SchematicTopView2D
                     slots={slots}
                     highlightCode={directions?.code}
+                    isARGuide={!!directions?.isARGuide}
                     onSelect={setSelected}
                     onSlotStateChange={handleSlotStateChange}
+                    selectedFloor={floor}
                 />
             )}
 
@@ -233,7 +327,6 @@ export default function Dashboard() {
             )}
 
             <ReserveDialog slot={selected} onClose={() => setSelected(null)} onConfirm={reserve} />
-            <DirectionsModal slot={directions} onClose={() => setDirections(null)} />
         </div>
     );
 }

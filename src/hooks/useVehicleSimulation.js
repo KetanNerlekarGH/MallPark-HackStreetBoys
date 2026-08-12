@@ -17,41 +17,132 @@ const CAR_COLORS = [
   "#a855f7", // Purple
   "#f59e0b", // Amber
   "#06b6d4", // Cyan
-  "#ffffff", // White
+  "#ec4899", // Pink
 ];
 
-// Zone Grouping for Balanced Zone Distribution (A, B, C)
+// Base Zone Groupings (A, B, C)
 const ZONE_SLOTS = {
-  A: ["A-101", "A-102", "A-103", "A-106", "A-107", "A-108", "A-109", "A-110"],
+  A: ["A-103", "A-106", "A-107", "A-108", "A-109", "A-110"],
   B: ["B-111", "B-112", "B-113", "B-114", "B-115", "B-116", "B-117", "B-118", "B-119", "B-120"],
   C: ["C-121", "C-122", "C-123", "C-124", "C-126", "C-127", "C-128", "C-129", "C-130"],
 };
 
-export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false } = {}) {
+export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, slots = [], selectedFloor = 1 } = {}) {
   const [vehicles, setVehicles] = useState([]);
   const vehiclesRef = useRef([]);
   vehiclesRef.current = vehicles;
 
-  // Zone distribution counter to balance Zone A, Zone B, Zone C entering cars
+  const slotsRef = useRef(slots);
+  slotsRef.current = slots;
+
+  const selectedFloorRef = useRef(selectedFloor);
+  selectedFloorRef.current = selectedFloor;
+
+  // Zone distribution index (rotates Zone A -> Zone B -> Zone C)
   const nextZoneIdxRef = useRef(0);
   const activeSlotVehiclesRef = useRef(new Map());
 
-  // Trigger a single vehicle trip simulation to a specific spotId
+  // Reset vehicles when floor level changes
+  useEffect(() => {
+    activeSlotVehiclesRef.current.clear();
+    setVehicles([]);
+  }, [selectedFloor]);
+
+  // Compute set of all occupied or assigned slot codes across database and active vehicles
+  const getOccupiedOrAssignedSlotsSet = useCallback(() => {
+    const set = new Set();
+    const fl = selectedFloorRef.current || 1;
+
+    // 1. Reserved / Occupied / Handicapped spots in database
+    slotsRef.current.forEach((s) => {
+      if (s.status === "reserved" || s.status === "occupied" || s.is_handicapped) {
+        set.add(s.code.toUpperCase());
+      }
+    });
+
+    // 2. Active simulated vehicles
+    vehiclesRef.current.forEach((v) => {
+      if (v.slotId && v.phase !== VEHICLE_PHASES.CLEANUP) {
+        set.add(v.slotId.toUpperCase());
+      }
+    });
+
+    // 3. Always preserve reserved handicapped spots (A-101, A-102, A-201, A-202, A-301, A-302)
+    set.add(`A-${fl}01`);
+    set.add(`A-${fl}02`);
+
+    return set;
+  }, []);
+
+  // Reroute approaching cars away from reserved/handicapped spots
+  useEffect(() => {
+    if (!vehicles || vehicles.length === 0) return;
+    const reservedSet = getOccupiedOrAssignedSlotsSet();
+
+    setVehicles((prevVehicles) => {
+      let changed = false;
+      const updatedList = prevVehicles.map((v) => {
+        const normSlot = (v.slotId || "").toUpperCase();
+        if ((v.phase === VEHICLE_PHASES.ENTERING || v.phase === VEHICLE_PHASES.PARKING) && reservedSet.has(normSlot)) {
+          const fl = selectedFloorRef.current || 1;
+          const assignedSet = getOccupiedOrAssignedSlotsSet();
+          const candidateSlots = [...ZONE_SLOTS.A, ...ZONE_SLOTS.B, ...ZONE_SLOTS.C].map((c) =>
+            c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
+          );
+          const unassigned = candidateSlots.filter((code) => !assignedSet.has(code.toUpperCase()));
+
+          if (unassigned.length > 0) {
+            const nextSlot = unassigned[Math.floor(Math.random() * unassigned.length)];
+            if (nextSlot && nextSlot.toUpperCase() !== normSlot) {
+              changed = true;
+              const newWaypoints = getVehicleWaypoints(nextSlot);
+              activeSlotVehiclesRef.current.delete(v.slotId);
+              activeSlotVehiclesRef.current.set(nextSlot, v.id);
+              return {
+                ...v,
+                slotId: nextSlot,
+                waypointsData: newWaypoints,
+              };
+            }
+          }
+        }
+        return v;
+      });
+      return changed ? updatedList : prevVehicles;
+    });
+  }, [slots, getOccupiedOrAssignedSlotsSet]);
+
+  // Trigger a vehicle trip simulation to a specific spot
   const simulateCarTrip = useCallback(
     (slotId, options = {}) => {
-      const validSlotId = PARKING_SLOTS_WAYPOINTS[slotId] ? slotId : "A-103";
-      const waypointsData = getVehicleWaypoints(validSlotId);
+      const fl = selectedFloorRef.current || 1;
+      const assignedSet = getOccupiedOrAssignedSlotsSet();
+
+      let targetSlot = slotId;
+      if (!targetSlot || assignedSet.has(targetSlot.toUpperCase())) {
+        const candidateSlots = [...ZONE_SLOTS.A, ...ZONE_SLOTS.B, ...ZONE_SLOTS.C].map((c) =>
+          c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
+        );
+        const unassigned = candidateSlots.filter((code) => !assignedSet.has(code.toUpperCase()));
+        if (unassigned.length > 0) {
+          targetSlot = unassigned[Math.floor(Math.random() * unassigned.length)];
+        } else {
+          return null; // All spots full
+        }
+      }
+
+      const waypointsData = getVehicleWaypoints(targetSlot);
       const color = options.color || CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
 
       const newVehicle = {
         id: `v_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        slotId: validSlotId,
+        slotId: targetSlot,
         color,
         phase: VEHICLE_PHASES.ENTERING,
         x: LANDMARKS.ENTRANCE.x,
         y: LANDMARKS.ENTRANCE.y,
         angle: -Math.PI / 2,
-        speed: 0.004, // Normalized units per frame
+        speed: 0.004,
         waypointsData,
         waypointIdx: 0,
         parkedTimer: 0,
@@ -60,11 +151,12 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false }
         isReversing: false,
       };
 
-      activeSlotVehiclesRef.current.set(validSlotId, newVehicle.id);
-      setVehicles((prev) => [...prev.filter((v) => v.slotId !== validSlotId), newVehicle]);
+      activeSlotVehiclesRef.current.set(targetSlot, newVehicle.id);
+      setVehicles((prev) => [...prev.filter((v) => v.slotId !== targetSlot), newVehicle]);
+
       return newVehicle.id;
     },
-    []
+    [onSlotStateChange, getOccupiedOrAssignedSlotsSet]
   );
 
   // Clear all vehicles
@@ -94,7 +186,6 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false }
               const dy = currentWP.y - updated.y;
               const dist = Math.hypot(dx, dy);
 
-              // Smooth angular rotation
               let targetAngle = Math.atan2(dy, dx);
               if (dist < 0.03 && currentWP.targetAngle !== undefined) {
                 targetAngle = currentWP.targetAngle;
@@ -110,19 +201,18 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false }
                 updated.y += (dy / dist) * updated.speed;
                 updated.isBraking = dist < 0.04;
               } else {
-                // Advance waypoint
                 if (updated.waypointIdx < entryWaypoints.length - 1) {
                   updated.waypointIdx += 1;
                   updated.phase = VEHICLE_PHASES.PARKING;
                 } else {
-                  // Final Parking Slot reached! Car is officially PARKED inside spot.
+                  // Car parked inside spot
                   updated.x = info.slot.x;
                   updated.y = info.slot.y;
                   updated.angle = info.turnInAngle;
                   updated.phase = VEHICLE_PHASES.PARKED;
                   updated.isBraking = true;
 
-                  // Fire callback: Spot turns RED (Occupied) as soon as car enters and parks!
+                  // Spot is RED (occupied)
                   if (onSlotStateChange) {
                     onSlotStateChange(slotId, "occupied");
                   }
@@ -138,14 +228,13 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false }
               updated.isReversing = true;
             }
           } else if (phase === VEHICLE_PHASES.LEAVING) {
-            // Reverse backing out of spot into corridor
             const approachX = info.approach.x;
             const approachY = info.approach.y;
             const dx = approachX - updated.x;
             const dy = approachY - updated.y;
             const dist = Math.hypot(dx, dy);
 
-            let targetAngle = Math.PI / 2; // South
+            let targetAngle = Math.PI / 2;
             let angleDiff = targetAngle - updated.angle;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
@@ -162,13 +251,12 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false }
               updated.waypointIdx = 0;
               updated.isReversing = false;
 
-              // Fire callback: Spot turns GREEN (Available) as soon as car backs out and leaves!
+              // Spot turns GREEN (available) as car leaves spot corridor
               if (onSlotStateChange) {
                 onSlotStateChange(slotId, "available");
               }
             }
           } else if (phase === VEHICLE_PHASES.EXITING) {
-            // Drive along exit waypoints out to Exit Gate
             const currentWP = exitWaypoints[updated.waypointIdx];
 
             if (currentWP) {
@@ -215,24 +303,44 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false }
     return () => cancelAnimationFrame(animId);
   }, [onSlotStateChange]);
 
-  // Background traffic simulator with balanced Zone A, B, and C distribution
+  // Traffic simulator distributing cars evenly across Zone A, Zone B, Zone C
   useEffect(() => {
     if (!autoSimulate) return;
 
     const interval = setInterval(() => {
-      if (vehiclesRef.current.length < 6) {
+      if (vehiclesRef.current.length < 5) {
+        const assignedSet = getOccupiedOrAssignedSlotsSet();
         const zoneKeys = ["A", "B", "C"];
         const targetZone = zoneKeys[nextZoneIdxRef.current];
         nextZoneIdxRef.current = (nextZoneIdxRef.current + 1) % zoneKeys.length;
 
-        const candidateSlots = ZONE_SLOTS[targetZone];
-        const randomSlot = candidateSlots[Math.floor(Math.random() * candidateSlots.length)];
-        simulateCarTrip(randomSlot);
+        const fl = selectedFloorRef.current || 1;
+        const candidateSlots = ZONE_SLOTS[targetZone].map((c) =>
+          c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
+        );
+        const unassignedInZone = candidateSlots.filter((code) => !assignedSet.has(code.toUpperCase()));
+
+        let targetSlot = null;
+        if (unassignedInZone.length > 0) {
+          targetSlot = unassignedInZone[Math.floor(Math.random() * unassignedInZone.length)];
+        } else {
+          const allFloorCandidates = [...ZONE_SLOTS.A, ...ZONE_SLOTS.B, ...ZONE_SLOTS.C].map((c) =>
+            c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
+          );
+          const allUnassigned = allFloorCandidates.filter((code) => !assignedSet.has(code.toUpperCase()));
+          if (allUnassigned.length > 0) {
+            targetSlot = allUnassigned[Math.floor(Math.random() * allUnassigned.length)];
+          }
+        }
+
+        if (targetSlot) {
+          simulateCarTrip(targetSlot);
+        }
       }
     }, 3800);
 
     return () => clearInterval(interval);
-  }, [autoSimulate, simulateCarTrip]);
+  }, [autoSimulate, simulateCarTrip, getOccupiedOrAssignedSlotsSet]);
 
   return {
     vehicles,

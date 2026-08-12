@@ -22,25 +22,20 @@ function generateSlotsDataset() {
   const slots = [];
   let idCounter = 1;
 
-  const floorConfigs = [
-    { floor: 1, prefix: "A" },
-    { floor: 2, prefix: "B" },
-    { floor: 3, prefix: "C" },
-  ];
-
+  const floorsList = [1, 2, 3];
   const zones = ["A", "B", "C"];
 
-  floorConfigs.forEach(({ floor, prefix }) => {
+  floorsList.forEach((floor) => {
     zones.forEach((zone, zoneIdx) => {
       for (let i = 1; i <= 10; i++) {
         const slotNum = zoneIdx * 10 + i; // 1..10, 11..20, 21..30
-        const code = `${prefix}-${floor}${slotNum < 10 ? "0" + slotNum : slotNum}`;
+        const code = `${zone}-${floor}${slotNum < 10 ? "0" + slotNum : slotNum}`;
         const isHandicapped = (zone === "A" && (i === 1 || i === 2)); // 1-2 bays near Mall Entrance per floor
         const isEv = !isHandicapped && (i % 3 === 0);
         const isBike = !isHandicapped && (i === 4 || i === 7);
         
         // Mark A-101 and A-102 as reserved (yellow) by default
-        const isReservedDefault = code === "A-101" || code === "A-102" || (prefix === "A" && floor === 1 && (i === 1 || i === 2));
+        const isReservedDefault = (zone === "A" && floor === 1 && (i === 1 || i === 2));
         const status = isReservedDefault ? "reserved" : "available";
 
         slots.push({
@@ -206,9 +201,33 @@ export const base44 = {
           }
         } catch (e) {}
         const slots = getStoredSlots();
-        const updated = slots.map((s) => (s.id === String(id) || s.code === String(id) ? { ...s, ...updates } : s));
+        const strId = String(id).toUpperCase();
+        let foundMatch = false;
+        const updated = slots.map((s) => {
+          const matchId = s.id ? String(s.id).toUpperCase() === strId : false;
+          const matchCode = s.code ? String(s.code).toUpperCase() === strId : false;
+          if (matchId || matchCode) {
+            foundMatch = true;
+            return { ...s, ...updates };
+          }
+          return s;
+        });
+
+        if (!foundMatch && id) {
+          const floorNum = parseInt(String(id).match(/-\d/)?.[0]?.replace("-", "") || "1", 10);
+          updated.push({
+            id: String(id),
+            code: String(id),
+            floor: floorNum,
+            zone: String(id).charAt(0),
+            vehicle_type: "car",
+            hourly_rate: 40,
+            ...updates,
+          });
+        }
+
         saveStoredSlots(updated);
-        return updated.find((s) => s.id === String(id) || s.code === String(id)) || updates;
+        return updated.find((s) => (s.id && String(s.id).toUpperCase() === strId) || (s.code && String(s.code).toUpperCase() === strId)) || updates;
       }
     },
     Reservation: {

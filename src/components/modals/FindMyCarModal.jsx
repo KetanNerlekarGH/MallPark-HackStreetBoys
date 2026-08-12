@@ -159,8 +159,13 @@ export default function FindMyCarModal({ isOpen, onClose, currentMall }) {
             </div>
 
             <Button
-              onClick={onClose}
-              className="w-full h-12 font-bold text-xs rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-[0_0_25px_rgba(168,85,247,0.45)] flex items-center justify-center gap-2"
+              onClick={() => {
+                if (activeReservation) {
+                  window.dispatchEvent(new CustomEvent("start-ar-guide", { detail: activeReservation }));
+                }
+                onClose();
+              }}
+              className="w-full h-12 font-bold text-xs rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-[0_0_25px_rgba(168,85,247,0.45)] flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
             >
               <Navigation className="w-4 h-4" /> Start AR Walking Guide
             </Button>

@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 const styles = {
   available: "bg-purple-500/10 border-purple-500/35 text-purple-300 hover:bg-purple-500/20 hover:border-purple-500/60 shadow-[0_0_12px_rgba(168,85,247,0.15)] hover:shadow-[0_0_20px_rgba(168,85,247,0.35)] cursor-pointer",
   occupied: "bg-rose-500/10 border-rose-500/20 text-rose-400/80 cursor-not-allowed opacity-70",
-  reserved: "bg-amber-500/10 border-amber-500/30 text-amber-400 cursor-pointer opacity-90",
+  reserved: "bg-amber-500/30 border-amber-400/80 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.35)] cursor-not-allowed",
 };
 
 const icons = { car: Car, bike: Bike, suv: Truck };
@@ -15,13 +15,21 @@ export default function SlotTile({ slot, onSelect }) {
   const { toast } = useToast();
   const Icon = icons[slot.vehicle_type] || Car;
   const isHandicapped = slot.code === "A-101" || slot.code === "A-102" || slot.is_handicapped;
-  const disabled = slot.status === "occupied";
+  const disabled = slot.status === "occupied" || slot.status === "reserved";
 
   const handleClick = () => {
     if (isHandicapped) {
       toast({
         title: `♿ Slot ${slot.code} Reserved for Handicapped`,
         description: `Slot ${slot.code} is reserved only for handicapped people with accessible permit badges.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (slot.status === "reserved") {
+      toast({
+        title: `Slot ${slot.code} is Reserved`,
+        description: `Spot ${slot.code} is already reserved (marked in Yellow).`,
         variant: "destructive",
       });
       return;
