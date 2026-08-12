@@ -291,7 +291,7 @@ export default function Dashboard() {
                 <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" /> Available</span>
                 <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" /> Occupied</span>
                 <span className="flex items-center gap-2"><i className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" /> Reserved</span>
-                <span className="flex items-center gap-2"><span className="text-amber-400 font-bold">♿</span> Handicapped (A-101, A-102)</span>
+                <span className="flex items-center gap-2"><span className="text-amber-400 font-bold">♿</span> Handicapped (C-121, C-122)</span>
                 <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" /> EV charging</span>
             </div>
 
