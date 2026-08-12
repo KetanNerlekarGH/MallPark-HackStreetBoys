@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Layers, ShieldCheck } from "lucide-react";
-import VehicleAnimationOverlay from "@/components/parking/VehicleAnimationOverlay";
 import { useVehicleSimulation } from "@/hooks/useVehicleSimulation";
 import { useToast } from "@/components/ui/use-toast";
 
-export default function SchematicTopView2D({ slots = [], highlightCode, isARGuide = false, onSelect, onSlotStateChange, selectedFloor = 1 }) {
+export default function SchematicTopView2D({ slots = [], highlightCode, isARGuide = false, onSelect, onSlotStateChange, onClearDirections, selectedFloor = 1 }) {
   const canvasRef = useRef(null);
   const { toast } = useToast();
   const [selectedSlotCode, setSelectedSlotCode] = useState(highlightCode || null);
@@ -22,6 +21,9 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
     slots,
     selectedFloor,
   });
+
+  const vehiclesRef = useRef(vehicles);
+  vehiclesRef.current = vehicles;
 
   // Map slots array to slot map lookup by slot code
   const slotsByCode = useMemo(() => {
@@ -48,17 +50,9 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
 
   const getRampUpText = (floorVal, direction = "left") => {
     const arrow = direction === "left" ? "⬅️" : "➡️";
-    if (floorVal === "all") return `RAMP UP TO NEXT LEVEL ${arrow}`;
-    const f = Number(floorVal) || 1;
-    const targetFloors = {
-      1: "SECOND",
-      2: "THIRD",
-      3: "FOURTH",
-      4: "FIFTH",
-      5: "ROOFTOP",
-    };
-    const targetName = targetFloors[f] || `FLOOR ${f + 1}`;
-    return `RAMP UP TO ${targetName} FLOOR ${arrow}`;
+    if (floorVal === "all" || Number(floorVal) === 1) return `RAMP UP TO SECOND FLOOR ${arrow}`;
+    if (Number(floorVal) === 2) return `RAMP UP TO THIRD FLOOR ${arrow}`;
+    return `RAMP DOWN TO LOWER FLOOR ${arrow}`;
   };
 
   const getSlotCoordsForFloor = (floorVal, allSlots = []) => {
@@ -102,25 +96,25 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
     const coords = {};
     const floorSlots = allSlots.filter((s) => floorVal === "all" || s.floor === f);
 
-    // Default mapping by zone & slot number for the current floor
-    basePositions.forEach(({ zone, num, x, y }) => {
-      const numStr = num < 10 ? `0${num}` : `${num}`;
-      const code = `${zone}-${f}${numStr}`;
-      coords[code] = { x, y };
-    });
-
-    // Also include any custom slot code present in floorSlots
     if (floorSlots.length > 0) {
       floorSlots.forEach((s) => {
-        if (!coords[s.code]) {
-          const parts = s.code.split("-");
-          if (parts.length === 2) {
-            const z = parts[0];
-            const n = parseInt(parts[1].slice(1), 10);
-            const match = basePositions.find((bp) => bp.zone === z && bp.num === n);
-            if (match) {
-              coords[s.code] = { x: match.x, y: match.y };
-            }
+        const parts = s.code ? s.code.split("-") : [];
+        if (parts.length === 2) {
+          const z = parts[0];
+          const n = parseInt(parts[1].slice(1), 10);
+          const match = basePositions.find((bp) => bp.zone === z && bp.num === n);
+          if (match) {
+            coords[s.code] = { x: match.x, y: match.y };
+          }
+        }
+      });
+    } else {
+      zonesList.forEach((z) => {
+        for (let n = 1; n <= 30; n++) {
+          const code = `${z}-${f}${n < 10 ? "0" + n : n}`;
+          const match = basePositions.find((bp) => bp.zone === z && bp.num === n);
+          if (match) {
+            coords[code] = { x: match.x, y: match.y };
           }
         }
       });
@@ -129,311 +123,365 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
     return coords;
   };
 
+  const zonesList = ["A", "B", "C"];
+
+  // Continuous 60 FPS Render Loop for 2D Blueprint Map & Moving Cars
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = 1000 * dpr;
-    canvas.height = 1000 * dpr;
-    ctx.scale(dpr, dpr);
+    let animId;
 
-    // Clear Canvas Background
-    ctx.clearRect(0, 0, 1000, 1000);
+    const renderMap = () => {
+      const dpr = window.devicePixelRatio || 1;
+      if (canvas.width !== 1000 * dpr || canvas.height !== 1000 * dpr) {
+        canvas.width = 1000 * dpr;
+        canvas.height = 1000 * dpr;
+      }
+      ctx.save();
+      ctx.scale(dpr, dpr);
 
-    // ==========================================
-    // DRAW ARCHITECTURAL BLUEPRINT MAP
-    // ==========================================
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "#475569";
-    ctx.strokeRect(60, 60, 880, 880);
+      // Clear Canvas Background
+      ctx.clearRect(0, 0, 1000, 1000);
 
-    // Outer Hatch / Walls
-    ctx.fillStyle = "#0f172a";
-    ctx.fillRect(60, 60, 880, 880);
+      // ==========================================
+      // DRAW ARCHITECTURAL BLUEPRINT MAP
+      // ==========================================
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#475569";
+      ctx.strokeRect(60, 60, 880, 880);
 
-    // 1. TOP LEFT CURVED RAMP AREA
-    ctx.beginPath();
-    ctx.arc(280, 240, 160, Math.PI, 1.5 * Math.PI, false);
-    ctx.lineWidth = 14;
-    ctx.strokeStyle = "#334155";
-    ctx.stroke();
+      // Outer Hatch / Walls
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(60, 60, 880, 880);
 
-    ctx.fillStyle = "#1e293b";
-    ctx.fillRect(75, 75, 450, 120);
-    ctx.strokeStyle = "#64748b";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(75, 75, 450, 120);
+      // 1. TOP LEFT CURVED RAMP AREA
+      ctx.beginPath();
+      ctx.arc(280, 240, 160, Math.PI, 1.5 * Math.PI, false);
+      ctx.lineWidth = 14;
+      ctx.strokeStyle = "#334155";
+      ctx.stroke();
 
-    ctx.fillStyle = "#e2e8f0";
-    ctx.font = "bold 13px monospace";
-    ctx.fillText(getRampUpText(selectedFloor, "left"), 110, 115);
-    ctx.fillText(getRampUpText(selectedFloor, "right"), 110, 160);
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(75, 75, 450, 120);
+      ctx.strokeStyle = "#64748b";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(75, 75, 450, 120);
 
-    // 2. TOP RIGHT ELEVATOR LOBBY & STAIRCASE
-    ctx.fillStyle = "#1e1b4b";
-    ctx.fillRect(680, 75, 240, 165);
-    ctx.strokeStyle = "#818cf8";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(680, 75, 240, 165);
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = "bold 13px monospace";
+      ctx.fillText(getRampUpText(selectedFloor, "left"), 110, 115);
+      ctx.fillText(getRampUpText(selectedFloor, "right"), 110, 160);
 
-    // Elevator Shafts with X
-    ctx.strokeStyle = "#a5b4fc";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(700, 90, 65, 65);
-    ctx.beginPath();
-    ctx.moveTo(700, 90); ctx.lineTo(765, 155);
-    ctx.moveTo(765, 90); ctx.lineTo(700, 155);
-    ctx.stroke();
+      // 2. TOP RIGHT ELEVATOR LOBBY & STAIRCASE
+      ctx.fillStyle = "#1e1b4b";
+      ctx.fillRect(680, 75, 240, 165);
+      ctx.strokeStyle = "#818cf8";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(680, 75, 240, 165);
 
-    ctx.strokeRect(835, 90, 65, 65);
-    ctx.beginPath();
-    ctx.moveTo(835, 90); ctx.lineTo(900, 155);
-    ctx.moveTo(900, 90); ctx.lineTo(835, 155);
-    ctx.stroke();
+      // Elevator Shafts with X
+      ctx.strokeStyle = "#a5b4fc";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(700, 90, 65, 65);
+      ctx.beginPath();
+      ctx.moveTo(700, 90); ctx.lineTo(765, 155);
+      ctx.moveTo(765, 90); ctx.lineTo(700, 155);
+      ctx.stroke();
 
-    ctx.fillStyle = "#cbd5e1";
-    ctx.font = "bold 12px sans-serif";
-    ctx.fillText("FIRE DOOR", 775, 108);
-    ctx.fillText("ELEVATOR LOBBY", 710, 195);
-    ctx.fillText("& STAIRCASE", 725, 215);
+      ctx.strokeRect(835, 90, 65, 65);
+      ctx.beginPath();
+      ctx.moveTo(835, 90); ctx.lineTo(900, 155);
+      ctx.moveTo(900, 90); ctx.lineTo(835, 155);
+      ctx.stroke();
 
-    // 3. BOTTOM MAIN ENTRANCE & EXIT GATE
-    ctx.fillStyle = "#0284c7";
-    ctx.fillRect(230, 875, 180, 65);
-    ctx.strokeStyle = "#38bdf8";
-    ctx.strokeRect(230, 875, 180, 65);
+      ctx.fillStyle = "#cbd5e1";
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillText("FIRE DOOR", 775, 108);
+      ctx.fillText("ELEVATOR LOBBY", 710, 195);
+      ctx.fillText("& STAIRCASE", 725, 215);
 
-    // Ticket Kiosks
-    ctx.fillStyle = "#f59e0b";
-    ctx.fillRect(225, 860, 20, 30);
-    ctx.fillRect(395, 860, 20, 30);
+      // 3. BOTTOM MAIN ENTRANCE & EXIT GATE
+      ctx.fillStyle = "#0284c7";
+      ctx.fillRect(230, 875, 180, 65);
+      ctx.strokeStyle = "#38bdf8";
+      ctx.strokeRect(230, 875, 180, 65);
 
-    // Barrier Arm
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(245, 880); ctx.lineTo(395, 880);
-    ctx.stroke();
+      // Ticket Kiosks
+      ctx.fillStyle = "#f59e0b";
+      ctx.fillRect(225, 860, 20, 30);
+      ctx.fillRect(395, 860, 20, 30);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 13px sans-serif";
-    ctx.fillText("ENTRANCE & EXIT GATE", 235, 920);
+      // Barrier Arm
+      ctx.strokeStyle = "#ef4444";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(245, 880); ctx.lineTo(395, 880);
+      ctx.stroke();
 
-    // 4. YELLOW DASHED PEDESTRIAN WALKWAY
-    ctx.strokeStyle = "#eab308";
-    ctx.lineWidth = 6;
-    ctx.setLineDash([8, 6]);
-    ctx.beginPath();
-    ctx.moveTo(380, 845);
-    ctx.lineTo(780, 845);
-    ctx.lineTo(780, 250);
-    ctx.lineTo(720, 250);
-    ctx.stroke();
-    ctx.setLineDash([]);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("ENTRANCE & EXIT GATE", 235, 920);
 
-    ctx.fillStyle = "#fef08a";
-    ctx.font = "bold 11px monospace";
-    ctx.fillText("PEDESTRIAN SAFETY WALKWAY", 480, 835);
+      // 4. YELLOW DASHED PEDESTRIAN WALKWAY
+      ctx.strokeStyle = "#eab308";
+      ctx.lineWidth = 6;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(380, 845);
+      ctx.lineTo(780, 845);
+      ctx.lineTo(780, 250);
+      ctx.lineTo(720, 250);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-    // ==========================================
-    // DRAW PARKING SLOTS (ZONE A, B, C)
-    // ==========================================
-    const slotCoords = getSlotCoordsForFloor(selectedFloor, slots);
+      ctx.fillStyle = "#fef08a";
+      ctx.font = "bold 11px monospace";
+      ctx.fillText("PEDESTRIAN SAFETY WALKWAY", 480, 835);
 
-    // Zone A Header Badge
-    ctx.fillStyle = "rgba(15, 10, 35, 0.9)";
-    ctx.strokeStyle = "#f472b6";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(90, 260, 100, 30, 8);
-    ctx.fill();
-    ctx.stroke();
+      // ==========================================
+      // DRAW PARKING SLOTS (ZONE A, B, C)
+      // ==========================================
+      const slotCoords = getSlotCoordsForFloor(selectedFloor, slots);
 
-    ctx.fillStyle = "#f472b6";
-    ctx.font = "bold 13px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("ZONE A", 140, 275);
+      // Zone Header Badges
+      ctx.fillStyle = "#ec4899";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("ZONE A", 125, 295);
 
-    // Zone B Header Badge
-    ctx.fillStyle = "rgba(15, 10, 35, 0.9)";
-    ctx.strokeStyle = "#38bdf8";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(460, 260, 100, 30, 8);
-    ctx.fill();
-    ctx.stroke();
+      ctx.fillStyle = "#38bdf8";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("ZONE B", 490, 295);
 
-    ctx.fillStyle = "#38bdf8";
-    ctx.font = "bold 13px sans-serif";
-    ctx.fillText("ZONE B", 510, 275);
+      ctx.fillStyle = "#a855f7";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("ZONE C", 885, 210);
 
-    // Zone C Header Badge
-    ctx.fillStyle = "rgba(15, 10, 35, 0.9)";
-    ctx.strokeStyle = "#c084fc";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(835, 195, 100, 30, 8);
-    ctx.fill();
-    ctx.stroke();
+      const activeVehicles = vehiclesRef.current || [];
 
-    ctx.fillStyle = "#c084fc";
-    ctx.font = "bold 13px sans-serif";
-    ctx.fillText("ZONE C", 885, 210);
+      // Render individual slots
+      Object.entries(slotCoords).forEach(([code, coord]) => {
+        const normalizedCode = code.toUpperCase();
+        const slotData = slotsByCode[normalizedCode] || slotsByCode[code] || { status: "available" };
+        const targetHighlight = highlightCode ? highlightCode.toUpperCase() : null;
+        const isTargetSpot = targetHighlight && (normalizedCode === targetHighlight || code.toUpperCase() === targetHighlight);
+        const isSelected = isTargetSpot || selectedSlotCode === code;
 
-    // Render individual slots
-    Object.entries(slotCoords).forEach(([code, coord]) => {
-      const normalizedCode = code.toUpperCase();
-      const slotData = slotsByCode[normalizedCode] || slotsByCode[code] || { status: "available" };
-      const targetHighlight = highlightCode ? highlightCode.toUpperCase() : null;
-      const isTargetSpot = targetHighlight && (normalizedCode === targetHighlight || code.toUpperCase() === targetHighlight);
-      const isSelected = isTargetSpot || selectedSlotCode === code;
+        // Spot turns RED (occupied) ONLY when a car is physically PARKED inside it, and stays GREEN otherwise
+        const isParkedVehicleInSpot = activeVehicles.some(
+          (v) => (v.slotId === code || v.slotId === normalizedCode) && v.phase === "PARKED"
+        );
+        const isHandicapped = (normalizedCode.endsWith("21") || normalizedCode.endsWith("22")) && !normalizedCode.endsWith("01") && !normalizedCode.endsWith("02");
+        const isOccupied = isParkedVehicleInSpot;
+        const isReserved = slotData.status === "reserved" || isHandicapped;
 
-      // Spot turns RED (occupied) ONLY when a car is physically PARKED inside it
-      const isParkedVehicleInSpot = vehicles.some(
-        (v) => (v.slotId === code || v.slotId === normalizedCode) && v.phase === "PARKED"
-      );
+        const slotW = 90;
+        const slotH = 52;
+        const x = coord.x - slotW / 2;
+        const y = coord.y - slotH / 2;
 
-      const isHandicapped = normalizedCode.endsWith("01") || normalizedCode.endsWith("02") || slotData.is_handicapped;
-      const isOccupied = isParkedVehicleInSpot || (slotData.status === "occupied" && !vehicles.some((v) => (v.slotId === code || v.slotId === normalizedCode) && v.phase !== "PARKED"));
-      const isReserved = slotData.status === "reserved" || isHandicapped;
+        // Slot Box Background & Stroke Colors
+        if (isTargetSpot) {
+          const glowRad = 85;
+          const radialGlow = ctx.createRadialGradient(coord.x, coord.y, 8, coord.x, coord.y, glowRad);
+          radialGlow.addColorStop(0, "rgba(56, 189, 248, 0.85)");
+          radialGlow.addColorStop(0.45, "rgba(168, 85, 247, 0.55)");
+          radialGlow.addColorStop(1, "rgba(168, 85, 247, 0)");
 
-      const slotW = 90;
-      const slotH = 52;
-      const x = coord.x - slotW / 2;
-      const y = coord.y - slotH / 2;
+          ctx.fillStyle = radialGlow;
+          ctx.beginPath();
+          ctx.arc(coord.x, coord.y, glowRad, 0, Math.PI * 2);
+          ctx.fill();
 
-      // Slot Box Background & Stroke Colors
-      if (isTargetSpot) {
-        // Multi-layered radial glowing aura around target spot
-        const glowRad = 85;
-        const radialGlow = ctx.createRadialGradient(coord.x, coord.y, 8, coord.x, coord.y, glowRad);
-        radialGlow.addColorStop(0, "rgba(56, 189, 248, 0.85)"); // Intense cyan core
-        radialGlow.addColorStop(0.45, "rgba(168, 85, 247, 0.55)"); // Purple mid glow
-        radialGlow.addColorStop(1, "rgba(168, 85, 247, 0)"); // Fade out
+          ctx.fillStyle = "rgba(147, 51, 234, 0.85)";
+          ctx.strokeStyle = "#38bdf8";
+          ctx.lineWidth = 4.5;
+        } else if (isReserved) {
+          ctx.fillStyle = "rgba(234, 179, 8, 0.45)";
+          ctx.strokeStyle = "#eab308";
+          ctx.lineWidth = isSelected ? 4 : 2.5;
+        } else if (isOccupied) {
+          ctx.fillStyle = "rgba(239, 68, 68, 0.45)";
+          ctx.strokeStyle = "#ef4444";
+          ctx.lineWidth = isSelected ? 3.5 : 2;
+        } else {
+          ctx.fillStyle = "rgba(16, 185, 129, 0.25)";
+          ctx.strokeStyle = "#10b981";
+          ctx.lineWidth = isSelected ? 3.5 : 2;
+        }
 
-        ctx.fillStyle = radialGlow;
+        ctx.fillRect(x, y, slotW, slotH);
+        ctx.strokeRect(x, y, slotW, slotH);
+
+        // Selected / AR Target ring highlight
+        if (isTargetSpot) {
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.9)";
+          ctx.lineWidth = 3.5;
+          ctx.strokeRect(x - 5, y - 5, slotW + 10, slotH + 10);
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x - 2, y - 2, slotW + 4, slotH + 4);
+        } else if (isSelected) {
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x - 2, y - 2, slotW + 4, slotH + 4);
+        }
+
+        // Slot Code Text & Reservation / Handicapped / AR Depiction
+        ctx.fillStyle = isTargetSpot ? "#ffffff" : isReserved ? "#fef08a" : isOccupied ? "#fca5a5" : "#6ee7b7";
+        ctx.font = isTargetSpot ? "extrabold 13px monospace" : "bold 13px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        if (isTargetSpot) {
+          ctx.fillText(`🎯 ${code}`, coord.x, coord.y);
+        } else if (isHandicapped) {
+          ctx.fillText(`♿ ${code}`, coord.x, coord.y);
+        } else if (slotData.status === "reserved") {
+          ctx.fillText(`🔒 ${code}`, coord.x, coord.y);
+        } else {
+          ctx.fillText(code, coord.x, coord.y);
+        }
+      });
+
+      // ==========================================
+      // RENDER ANIMATED 2D VEHICLES DIRECTLY ON CANVAS
+      // ==========================================
+      activeVehicles.forEach((v) => {
+        const vx = v.x * 1000;
+        const vy = v.y * 1000;
+        const carW = 42;
+        const carH = 24;
+
+        ctx.save();
+        ctx.translate(vx, vy);
+        ctx.rotate(v.angle);
+
+        // 1. Vehicle Drop Shadow
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
         ctx.beginPath();
-        ctx.arc(coord.x, coord.y, glowRad, 0, Math.PI * 2);
+        ctx.roundRect(-carW / 2 + 3, -carH / 2 + 3, carW, carH, 6);
         ctx.fill();
 
-        // Bright Glowing Neon Purple/Cyan for AR Guide target spot
-        ctx.fillStyle = "rgba(147, 51, 234, 0.85)";
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 4.5;
-      } else if (isReserved) {
-        // Bright Vibrant YELLOW for Reserved slots
-        ctx.fillStyle = "rgba(234, 179, 8, 0.45)";
-        ctx.strokeStyle = "#eab308";
-        ctx.lineWidth = isSelected ? 4 : 2.5;
-      } else if (isOccupied) {
-        // Bright NEON RED for Occupied slots
-        ctx.fillStyle = "rgba(239, 68, 68, 0.45)";
-        ctx.strokeStyle = "#ef4444";
-        ctx.lineWidth = isSelected ? 3.5 : 2;
-      } else {
-        // Bright EMERALD GREEN for Available / Vacant slots
-        ctx.fillStyle = "rgba(16, 185, 129, 0.25)";
-        ctx.strokeStyle = "#10b981";
-        ctx.lineWidth = isSelected ? 3.5 : 2;
-      }
+        // 2. Headlight Beams (Glowing Cones Forward)
+        if (v.phase !== "PARKED" || v.isBraking) {
+          const lightGrad = ctx.createRadialGradient(carW / 2 + 10, 0, 2, carW / 2 + 30, 0, 45);
+          lightGrad.addColorStop(0, "rgba(254, 240, 138, 0.6)");
+          lightGrad.addColorStop(1, "rgba(254, 240, 138, 0)");
 
-      ctx.fillRect(x, y, slotW, slotH);
-      ctx.strokeRect(x, y, slotW, slotH);
-
-      // Selected / AR Target ring highlight
-      if (isTargetSpot) {
-        ctx.strokeStyle = "rgba(56, 189, 248, 0.9)";
-        ctx.lineWidth = 3.5;
-        ctx.strokeRect(x - 5, y - 5, slotW + 10, slotH + 10);
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x - 2, y - 2, slotW + 4, slotH + 4);
-      } else if (isSelected) {
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(x - 2, y - 2, slotW + 4, slotH + 4);
-      }
-
-      // Slot Code Text & Reservation / Handicapped / AR Depiction
-      ctx.fillStyle = isTargetSpot ? "#ffffff" : isReserved ? "#fef08a" : isOccupied ? "#fca5a5" : "#6ee7b7";
-      ctx.font = isTargetSpot ? "extrabold 13px monospace" : "bold 13px monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      if (isTargetSpot) {
-        ctx.fillText(`🎯 ${code}`, coord.x, coord.y);
-      } else if (isHandicapped) {
-        ctx.fillText(`♿ ${code}`, coord.x, coord.y);
-      } else if (slotData.status === "reserved") {
-        ctx.fillText(`🔒 ${code}`, coord.x, coord.y);
-      } else {
-        ctx.fillText(code, coord.x, coord.y);
-      }
-    });
-
-    // AR Guidance Path Overlay: Drawn ONLY when AR Walking Guide is active (isARGuide or highlightCode prop)
-    if (isARGuide || (highlightCode && highlightCode.length > 0)) {
-      const activeTarget = highlightCode || selectedSlotCode;
-      if (activeTarget) {
-        const normTarget = activeTarget.toUpperCase();
-        const targetCoord = slotCoords[normTarget] || slotCoords[activeTarget];
-        if (targetCoord) {
-          // 1. Wide Neon Glow Background Stroke
-          ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
-          ctx.lineWidth = 14;
+          ctx.fillStyle = lightGrad;
           ctx.beginPath();
-          ctx.moveTo(770, 195); // Elevator Lobby Exit
-          ctx.lineTo(780, 250); // Pedestrian corridor entrance
-          ctx.lineTo(780, targetCoord.y); // Down corridor to target Y elevation
-          ctx.lineTo(targetCoord.x, targetCoord.y); // Turn into designated spot
-          ctx.stroke();
-
-          // 2. Bright Dashed Main Path Line
-          ctx.strokeStyle = "#38bdf8";
-          ctx.lineWidth = 5;
-          ctx.setLineDash([12, 8]);
-          ctx.beginPath();
-          ctx.moveTo(770, 195);
-          ctx.lineTo(780, 250);
-          ctx.lineTo(780, targetCoord.y);
-          ctx.lineTo(targetCoord.x, targetCoord.y);
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          // Elevator Start Pin Indicator
-          ctx.fillStyle = "#6366f1";
-          ctx.beginPath();
-          ctx.arc(770, 195, 9, 0, Math.PI * 2);
+          ctx.moveTo(carW / 2, -carH / 3);
+          ctx.lineTo(carW / 2 + 45, -carH * 0.95);
+          ctx.lineTo(carW / 2 + 45, carH * 0.95);
+          ctx.lineTo(carW / 2, carH / 3);
+          ctx.closePath();
           ctx.fill();
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 2.5;
-          ctx.stroke();
-          ctx.fillStyle = "#a5b4fc";
-          ctx.font = "bold 11px sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText("🛗 ELEVATOR START", 770, 178);
+        }
 
-          // Animated AR Destination Pin at target spot
-          ctx.fillStyle = "#38bdf8";
-          ctx.beginPath();
-          ctx.arc(targetCoord.x, targetCoord.y - 38, 9, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 2.5;
-          ctx.stroke();
-          ctx.fillStyle = "#38bdf8";
-          ctx.font = "bold 12px monospace";
-          ctx.textAlign = "center";
-          ctx.fillText("📍 AR DESTINATION", targetCoord.x, targetCoord.y - 52);
+        // 3. Car Body Shell
+        ctx.fillStyle = v.color || "#ef4444";
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.roundRect(-carW / 2, -carH / 2, carW, carH, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        // 4. Windshield & Rear Window Glass
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(carW * 0.05, -carH * 0.38, carW * 0.22, carH * 0.76);
+        ctx.fillRect(-carW * 0.32, -carH * 0.34, carW * 0.18, carH * 0.68);
+
+        // 5. Front Headlights
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(carW / 2 - 3, -carH / 2 + 2, 3, 5);
+        ctx.fillRect(carW / 2 - 3, carH / 2 - 7, 3, 5);
+
+        // 6. Rear Brake Lights
+        ctx.fillStyle = v.isBraking ? "#ff0000" : "#b91c1c";
+        ctx.fillRect(-carW / 2, -carH / 2 + 2, 3, 5);
+        ctx.fillRect(-carW / 2, carH / 2 - 7, 3, 5);
+
+        ctx.restore();
+      });
+
+      // AR Guidance Path Overlay: Drawn ONLY when AR Walking Guide is active (isARGuide or highlightCode prop)
+      if (isARGuide || (highlightCode && highlightCode.length > 0)) {
+        const activeTarget = highlightCode || selectedSlotCode;
+        if (activeTarget) {
+          const normTarget = activeTarget.toUpperCase();
+          const targetCoord = slotCoords[normTarget] || slotCoords[activeTarget];
+          if (targetCoord) {
+            const isWestSide = targetCoord.x < 500;
+            const corridorX = isWestSide ? 280 : 730;
+
+            const routePoints = [
+              { x: 770, y: 195 },
+              { x: 770, y: 240 },
+              { x: corridorX, y: 240 },
+              { x: corridorX, y: targetCoord.y },
+              { x: targetCoord.x, y: targetCoord.y },
+            ];
+
+            // 1. Wide Neon Glow Background Stroke
+            ctx.strokeStyle = "rgba(56, 189, 248, 0.35)";
+            ctx.lineWidth = 14;
+            ctx.beginPath();
+            ctx.moveTo(routePoints[0].x, routePoints[0].y);
+            for (let i = 1; i < routePoints.length; i++) {
+              ctx.lineTo(routePoints[i].x, routePoints[i].y);
+            }
+            ctx.stroke();
+
+            // 2. Bright Dashed Main Path Line
+            ctx.strokeStyle = "#38bdf8";
+            ctx.lineWidth = 5;
+            ctx.setLineDash([12, 8]);
+            ctx.beginPath();
+            ctx.moveTo(routePoints[0].x, routePoints[0].y);
+            for (let i = 1; i < routePoints.length; i++) {
+              ctx.lineTo(routePoints[i].x, routePoints[i].y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Elevator Start Pin Indicator
+            ctx.fillStyle = "#6366f1";
+            ctx.beginPath();
+            ctx.arc(770, 195, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            ctx.fillStyle = "#a5b4fc";
+            ctx.font = "bold 11px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("🛗 ELEVATOR START", 770, 178);
+
+            // Animated AR Destination Pin at target spot
+            ctx.fillStyle = "#38bdf8";
+            ctx.beginPath();
+            ctx.arc(targetCoord.x, targetCoord.y - 38, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            ctx.fillStyle = "#38bdf8";
+            ctx.font = "bold 12px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("📍 AR DESTINATION", targetCoord.x, targetCoord.y - 52);
+          }
         }
       }
-    }
 
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
-  }, [selectedSlotCode, slotsByCode, vehicles, selectedFloor, slots, highlightCode, isARGuide]);
+      ctx.restore();
+      animId = requestAnimationFrame(renderMap);
+    };
+
+    animId = requestAnimationFrame(renderMap);
+    return () => cancelAnimationFrame(animId);
+  }, [selectedSlotCode, slotsByCode, selectedFloor, slots, highlightCode, isARGuide]);
 
   // Handle canvas click to select slot
   const handleCanvasClick = (e) => {
@@ -458,15 +506,15 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
     if (found) {
       const normalizedCode = found.toUpperCase();
       const slotData = slotsByCode[normalizedCode] || slotsByCode[found] || { status: "available" };
-      const isParkedVehicleInSpot = vehicles.some(
+      const activeVehicles = vehiclesRef.current || [];
+      const isParkedVehicleInSpot = activeVehicles.some(
         (v) => (v.slotId === found || v.slotId === normalizedCode) && v.phase === "PARKED"
       );
 
-      const isHandicapped = normalizedCode.endsWith("01") || normalizedCode.endsWith("02") || slotData.is_handicapped;
+      const isHandicapped = (normalizedCode.endsWith("21") || normalizedCode.endsWith("22")) && !normalizedCode.endsWith("01") && !normalizedCode.endsWith("02");
       const isOccupied = isParkedVehicleInSpot || slotData.status === "occupied";
       const isReserved = slotData.status === "reserved";
 
-      // 1. When user clicks on A-101 or A-102, display a message that says it's reserved only for handicapped people
       if (isHandicapped) {
         toast({
           title: `♿ Slot ${found} Reserved for Handicapped`,
@@ -476,17 +524,15 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
         return;
       }
 
-      // 2. DO NOT let the user reserve parking spots marked in YELLOW (Reserved) or RED (Occupied)
       if (isOccupied || isReserved) {
         toast({
-          title: `Slot ${found} is ${isReserved ? "Reserved" : "Occupied"}`,
-          description: `Spot ${found} is marked in ${isReserved ? "Yellow (Reserved)" : "Red (Occupied)"} and cannot be booked until it turns Green.`,
+          title: `Slot ${found} is Reserved / Occupied`,
+          description: `Spot ${found} is marked in Yellow (Reserved) or Red (Occupied) and cannot be booked until it turns Green.`,
           variant: "destructive",
         });
         return;
       }
 
-      // 3. User clicks on GREEN spot (Available) -> Open ReserveDialog to reserve that spot!
       setSelectedSlotCode(found);
       const f = selectedFloor === "all" ? 1 : (Number(selectedFloor) || 1);
       const slotObj = slotsByCode[normalizedCode] || slotsByCode[found] || {
@@ -504,7 +550,7 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
 
   return (
     <div className="space-y-4 font-mono">
-      
+
       {/* Header Info Toolbar */}
       <div className="rounded-2xl border border-purple-500/40 bg-[#0d071e]/95 p-4 flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl shadow-[0_0_30px_rgba(168,85,247,0.2)]">
         <div className="flex items-center gap-3">
@@ -513,13 +559,13 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
           </div>
           <div>
             <h3 className="text-base font-extrabold text-white tracking-tight">{getFloorTitleText(selectedFloor)}</h3>
-            <p className="text-[11px] text-purple-200/70 font-sans">Architectural 2D Schematic · Non-Blocking Vehicle Overlay Simulation</p>
+            <p className="text-[11px] text-purple-200/70 font-sans">Architectural 2D Schematic · Dynamic Real-time Vehicle Simulation</p>
           </div>
         </div>
 
       </div>
 
-      {/* Blueprint Map Container with Non-Blocking Overlay */}
+      {/* Blueprint Map Container with Canvas Map */}
       <div className="relative rounded-3xl border-2 border-purple-500/50 bg-[#090514] p-3 shadow-[0_0_50px_rgba(168,85,247,0.25)] overflow-hidden">
         {/* Floating Active AR Guide Route Banner ON THE MAP */}
         {(isARGuide || (highlightCode && highlightCode.length > 0)) && (
@@ -531,23 +577,23 @@ export default function SchematicTopView2D({ slots = [], highlightCode, isARGuid
               </span>
             </div>
             <button
-              onClick={() => setSelectedSlotCode(null)}
-              className="px-3 py-1 text-[11px] font-bold rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/40 transition-colors"
+              onClick={() => {
+                setSelectedSlotCode(null);
+                if (onClearDirections) onClearDirections();
+              }}
+              className="px-3 py-1.5 text-[11px] font-bold rounded-xl bg-rose-500/20 text-rose-200 border border-rose-500/40 hover:bg-rose-500/40 hover:scale-105 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
             >
-              Clear Path
+              ✕ Quit AR Path
             </button>
           </div>
         )}
 
-        {/* Underlay Interactive Canvas Map */}
+        {/* Interactive Canvas Map with Integrated Real-time Vehicle Renderer */}
         <canvas
           ref={canvasRef}
           onClick={handleCanvasClick}
           className="w-full h-auto aspect-square rounded-2xl cursor-pointer touch-none block"
         />
-
-        {/* Non-blocking 2D Vehicle Overlay (pointer-events: none) */}
-        <VehicleAnimationOverlay vehicles={vehicles} />
 
         {/* Floating Instruction Banner */}
         <div className="absolute bottom-6 left-6 right-6 p-3 rounded-2xl bg-black/80 border border-purple-500/40 backdrop-blur-md flex items-center justify-between text-xs text-purple-200">

@@ -7,6 +7,10 @@ export const VEHICLE_PHASES = {
   PARKED: "PARKED",
   LEAVING: "LEAVING",
   EXITING: "EXITING",
+  VALET_LEAVING: "VALET_LEAVING",
+  VALET_TO_ELEVATOR: "VALET_TO_ELEVATOR",
+  VALET_ELEVATOR_PAUSE: "VALET_ELEVATOR_PAUSE",
+  VALET_TO_EXIT: "VALET_TO_EXIT",
   CLEANUP: "CLEANUP",
 };
 
@@ -27,7 +31,7 @@ const ZONE_SLOTS = {
   C: ["C-121", "C-122", "C-123", "C-124", "C-126", "C-127", "C-128", "C-129", "C-130"],
 };
 
-export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, slots = [], selectedFloor = 1 } = {}) {
+export function useVehicleSimulation({ onSlotStateChange, autoSimulate = true, slots = [], selectedFloor = 1 } = {}) {
   const [vehicles, setVehicles] = useState([]);
   const vehiclesRef = useRef([]);
   vehiclesRef.current = vehicles;
@@ -48,81 +52,38 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, 
     setVehicles([]);
   }, [selectedFloor]);
 
-  // Compute set of all occupied or assigned slot codes across database and active vehicles
+  // Set of occupied or assigned slots
   const getOccupiedOrAssignedSlotsSet = useCallback(() => {
     const set = new Set();
-    const fl = selectedFloorRef.current || 1;
 
-    // 1. Reserved / Occupied / Handicapped spots in database
-    slotsRef.current.forEach((s) => {
-      if (s.status === "reserved" || s.status === "occupied" || s.is_handicapped) {
-        set.add(s.code.toUpperCase());
-      }
-    });
-
-    // 2. Active simulated vehicles
-    vehiclesRef.current.forEach((v) => {
+    (vehiclesRef.current || []).forEach((v) => {
       if (v.slotId && v.phase !== VEHICLE_PHASES.CLEANUP) {
         set.add(v.slotId.toUpperCase());
       }
     });
 
-    // 3. Always preserve reserved handicapped spots (A-101, A-102, A-201, A-202, A-301, A-302)
-    set.add(`A-${fl}01`);
-    set.add(`A-${fl}02`);
+    const fl = selectedFloorRef.current || 1;
+    set.add(`C-${fl}21`);
+    set.add(`C-${fl}22`);
 
     return set;
   }, []);
 
-  // Reroute approaching cars away from reserved/handicapped spots
-  useEffect(() => {
-    if (!vehicles || vehicles.length === 0) return;
-    const reservedSet = getOccupiedOrAssignedSlotsSet();
+  // Spawn a vehicle targeting a slot ID
+  const addVehicle = useCallback(
+    (options = {}) => {
+      let targetSlot = options.slotId;
 
-    setVehicles((prevVehicles) => {
-      let changed = false;
-      const updatedList = prevVehicles.map((v) => {
-        const normSlot = (v.slotId || "").toUpperCase();
-        if ((v.phase === VEHICLE_PHASES.ENTERING || v.phase === VEHICLE_PHASES.PARKING) && reservedSet.has(normSlot)) {
-          const fl = selectedFloorRef.current || 1;
-          const assignedSet = getOccupiedOrAssignedSlotsSet();
-          const candidateSlots = [...ZONE_SLOTS.A, ...ZONE_SLOTS.B, ...ZONE_SLOTS.C].map((c) =>
-            c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
-          );
-          const unassigned = candidateSlots.filter((code) => !assignedSet.has(code.toUpperCase()));
+      if (!targetSlot) {
+        const zoneKeys = ["A", "B", "C"];
+        const zone = options.zone || zoneKeys[nextZoneIdxRef.current];
+        nextZoneIdxRef.current = (nextZoneIdxRef.current + 1) % zoneKeys.length;
 
-          if (unassigned.length > 0) {
-            const nextSlot = unassigned[Math.floor(Math.random() * unassigned.length)];
-            if (nextSlot && nextSlot.toUpperCase() !== normSlot) {
-              changed = true;
-              const newWaypoints = getVehicleWaypoints(nextSlot);
-              activeSlotVehiclesRef.current.delete(v.slotId);
-              activeSlotVehiclesRef.current.set(nextSlot, v.id);
-              return {
-                ...v,
-                slotId: nextSlot,
-                waypointsData: newWaypoints,
-              };
-            }
-          }
-        }
-        return v;
-      });
-      return changed ? updatedList : prevVehicles;
-    });
-  }, [slots, getOccupiedOrAssignedSlotsSet]);
-
-  // Trigger a vehicle trip simulation to a specific spot
-  const simulateCarTrip = useCallback(
-    (slotId, options = {}) => {
-      const fl = selectedFloorRef.current || 1;
-      const assignedSet = getOccupiedOrAssignedSlotsSet();
-
-      let targetSlot = slotId;
-      if (!targetSlot || assignedSet.has(targetSlot.toUpperCase())) {
-        const candidateSlots = [...ZONE_SLOTS.A, ...ZONE_SLOTS.B, ...ZONE_SLOTS.C].map((c) =>
+        const fl = selectedFloorRef.current || 1;
+        const candidateSlots = ZONE_SLOTS[zone].map((c) =>
           c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
         );
+        const assignedSet = getOccupiedOrAssignedSlotsSet();
         const unassigned = candidateSlots.filter((code) => !assignedSet.has(code.toUpperCase()));
         if (unassigned.length > 0) {
           targetSlot = unassigned[Math.floor(Math.random() * unassigned.length)];
@@ -134,19 +95,22 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, 
       const waypointsData = getVehicleWaypoints(targetSlot);
       const color = options.color || CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
 
+      const spawnX = waypointsData.spawnPoint ? waypointsData.spawnPoint.x : 0.28;
+      const spawnY = waypointsData.spawnPoint ? waypointsData.spawnPoint.y : 0.88;
+
       const newVehicle = {
         id: `v_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         slotId: targetSlot,
         color,
         phase: VEHICLE_PHASES.ENTERING,
-        x: LANDMARKS.ENTRANCE.x,
-        y: LANDMARKS.ENTRANCE.y,
+        x: spawnX,
+        y: spawnY,
         angle: -Math.PI / 2,
-        speed: 0.004,
+        speed: 0.0045,
         waypointsData,
         waypointIdx: 0,
         parkedTimer: 0,
-        parkDuration: options.parkDuration || 350 + Math.random() * 250,
+        parkDuration: options.parkDuration || 400 + Math.random() * 300,
         isBraking: false,
         isReversing: false,
       };
@@ -156,13 +120,163 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, 
 
       return newVehicle.id;
     },
-    [onSlotStateChange, getOccupiedOrAssignedSlotsSet]
+    [getOccupiedOrAssignedSlotsSet]
   );
 
-  // Clear all vehicles
-  const clearVehicles = useCallback(() => {
-    activeSlotVehiclesRef.current.clear();
-    setVehicles([]);
+  // Keep a stationary parked vehicle in reserved or occupied slots, and remove when reservation ends
+  useEffect(() => {
+    if (!slots || slots.length === 0) return;
+    const currentFloor = selectedFloorRef.current || 1;
+    const activeReservedOrOccupiedCodes = new Set(
+      slots
+        .filter((s) => (Number(s.floor) || 1) === currentFloor && (s.status === "reserved" || s.status === "occupied"))
+        .map((s) => s.code.toUpperCase())
+    );
+
+    slots.forEach((s) => {
+      const sFloor = Number(s.floor) || 1;
+      const code = s.code ? s.code.toUpperCase() : "";
+      if (sFloor === currentFloor && (s.status === "reserved" || s.status === "occupied")) {
+        if (code && !activeSlotVehiclesRef.current.has(code)) {
+          const waypointsData = getVehicleWaypoints(code);
+          const info = waypointsData.info;
+          if (info && info.slot) {
+            const newVehicle = {
+              id: `v_reserved_${code}`,
+              slotId: code,
+              color: s.status === "reserved" ? "#f59e0b" : "#ef4444",
+              phase: VEHICLE_PHASES.PARKED,
+              x: info.slot.x,
+              y: info.slot.y,
+              angle: info.turnInAngle,
+              speed: 0.005,
+              waypointsData,
+              waypointIdx: 0,
+              parkedTimer: 0,
+              parkDuration: 9999999, // Stays parked stationary for reservation duration
+              isBraking: true,
+              isReversing: false,
+              isReservedStationary: true,
+              plate: s.vehicle_number || "MH-12-MP-8899",
+            };
+            activeSlotVehiclesRef.current.set(code, newVehicle.id);
+            setVehicles((prev) => [...prev.filter((v) => v.slotId !== code), newVehicle]);
+          }
+        }
+      }
+    });
+
+    // When a reservation ends (status becomes available), turn spot green immediately and dispatch the car to exit!
+    setVehicles((prev) => {
+      return prev.map((v) => {
+        if (v.isReservedStationary && (v.phase === VEHICLE_PHASES.PARKED || v.phase === VEHICLE_PHASES.PARKING)) {
+          const isStillReservedOrOccupied = activeReservedOrOccupiedCodes.has(v.slotId.toUpperCase());
+          if (!isStillReservedOrOccupied) {
+            // Immediately free the spot to green available
+            if (onSlotStateChange) {
+              onSlotStateChange(v.slotId, "available");
+            }
+            // Dispatch the car to reverse out and exit through the gate
+            return {
+              ...v,
+              phase: VEHICLE_PHASES.LEAVING,
+              waypointIdx: 0,
+              isBraking: false,
+              isReversing: true,
+              isReservedStationary: false,
+            };
+          }
+        }
+        return v;
+      });
+    });
+  }, [slots, selectedFloor, onSlotStateChange]);
+
+  // Traffic simulator distributing cars evenly across Zone A, Zone B, Zone C
+  useEffect(() => {
+    if (!autoSimulate) return;
+
+    // Immediately spawn first vehicle on load
+    if (vehiclesRef.current.length === 0) {
+      addVehicle();
+    }
+
+    const interval = setInterval(() => {
+      if (vehiclesRef.current.length < 6) {
+        addVehicle();
+      }
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [autoSimulate, addVehicle]);
+
+  // Listen for Valet Pickup Request Event
+  useEffect(() => {
+    const handleValetPickup = (e) => {
+      const { vehicleNo } = e.detail || {};
+      const normInput = (vehicleNo || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+      setVehicles((prev) => {
+        let matched = false;
+        const updated = prev.map((v) => {
+          const vPlate = (v.plate || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+          const isMatch = matched === false && (
+            (vPlate && normInput && (vPlate.includes(normInput) || normInput.includes(vPlate))) ||
+            v.slotId.toUpperCase().includes(normInput) ||
+            !normInput
+          );
+
+          if (isMatch && (v.phase === VEHICLE_PHASES.PARKED || v.phase === VEHICLE_PHASES.PARKING)) {
+            matched = true;
+            return {
+              ...v,
+              phase: VEHICLE_PHASES.VALET_LEAVING,
+              waypointIdx: 0,
+              parkedTimer: 0,
+              isBraking: false,
+              isReversing: true,
+              color: "#a855f7",
+            };
+          }
+          return v;
+        });
+
+        if (!matched && slotsRef.current) {
+          const targetSlot = slotsRef.current.find(
+            (s) => (s.status === "reserved" || s.status === "occupied")
+          );
+          if (targetSlot) {
+            const code = targetSlot.code.toUpperCase();
+            const waypointsData = getVehicleWaypoints(code);
+            const info = waypointsData.info;
+            if (info && info.slot) {
+              const valetVehicle = {
+                id: `v_valet_${Date.now()}`,
+                slotId: code,
+                color: "#a855f7",
+                phase: VEHICLE_PHASES.VALET_LEAVING,
+                x: info.slot.x,
+                y: info.slot.y,
+                angle: info.turnInAngle,
+                speed: 0.0055,
+                waypointsData,
+                waypointIdx: 0,
+                parkedTimer: 0,
+                isBraking: false,
+                isReversing: true,
+              };
+              activeSlotVehiclesRef.current.set(code, valetVehicle.id);
+              return [...updated.filter((v) => v.slotId !== code), valetVehicle];
+            }
+          }
+        }
+
+        return updated;
+      });
+    };
+
+    window.addEventListener("dispatch-valet-pickup", handleValetPickup);
+    return () => window.removeEventListener("dispatch-valet-pickup", handleValetPickup);
   }, []);
 
   // Main simulation tick loop
@@ -212,7 +326,6 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, 
                   updated.phase = VEHICLE_PHASES.PARKED;
                   updated.isBraking = true;
 
-                  // Spot is RED (occupied)
                   if (onSlotStateChange) {
                     onSlotStateChange(slotId, "occupied");
                   }
@@ -220,12 +333,14 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, 
               }
             }
           } else if (phase === VEHICLE_PHASES.PARKED) {
-            updated.parkedTimer += 1;
-            if (updated.parkedTimer >= updated.parkDuration) {
-              updated.phase = VEHICLE_PHASES.LEAVING;
-              updated.waypointIdx = 0;
-              updated.isBraking = false;
-              updated.isReversing = true;
+            if (!updated.isReservedStationary) {
+              updated.parkedTimer += 1;
+              if (updated.parkedTimer >= updated.parkDuration) {
+                updated.phase = VEHICLE_PHASES.LEAVING;
+                updated.waypointIdx = 0;
+                updated.isBraking = false;
+                updated.isReversing = true;
+              }
             }
           } else if (phase === VEHICLE_PHASES.LEAVING) {
             const approachX = info.approach.x;
@@ -251,7 +366,6 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, 
               updated.waypointIdx = 0;
               updated.isReversing = false;
 
-              // Spot turns GREEN (available) as car leaves spot corridor
               if (onSlotStateChange) {
                 onSlotStateChange(slotId, "available");
               }
@@ -286,6 +400,133 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, 
                 }
               }
             }
+          } else if (phase === VEHICLE_PHASES.VALET_LEAVING) {
+            // Step 1 of Valet: Reverse 90° straight out to approach aisle
+            const approachX = info.approach.x;
+            const approachY = info.approach.y;
+            const dx = approachX - updated.x;
+            const dy = approachY - updated.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > 0.008) {
+              updated.x += dx * 0.08;
+              updated.y += dy * 0.08;
+            } else {
+              updated.x = approachX;
+              updated.y = approachY;
+              updated.phase = VEHICLE_PHASES.VALET_TO_ELEVATOR;
+              updated.waypointIdx = 0;
+              updated.isReversing = false;
+
+              // Generate waypoints from approach to Elevator Lobby (x: 0.73, y: 0.24)
+              const corridorX = info.approach.x;
+              updated.valetElevatorWPs = [
+                { x: corridorX, y: LANDMARKS.TOP_CROSS_Y, targetAngle: -Math.PI / 2 },
+                { x: 0.73, y: LANDMARKS.TOP_CROSS_Y, targetAngle: 0 },
+              ];
+            }
+          } else if (phase === VEHICLE_PHASES.VALET_TO_ELEVATOR) {
+            // Step 2 of Valet: Drive up road corridor to Elevator Lobby (0.73, 0.24)
+            const wps = updated.valetElevatorWPs || [];
+            const currentWP = wps[updated.waypointIdx];
+
+            if (currentWP) {
+              const dx = currentWP.x - updated.x;
+              const dy = currentWP.y - updated.y;
+              const dist = Math.hypot(dx, dy);
+
+              let targetAngle = Math.atan2(dy, dx);
+              if (dist < 0.03 && currentWP.targetAngle !== undefined) {
+                targetAngle = currentWP.targetAngle;
+              }
+
+              let angleDiff = targetAngle - updated.angle;
+              while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+              while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+              updated.angle += angleDiff * 0.14;
+
+              if (dist > 0.01) {
+                updated.x += (dx / dist) * (updated.speed * 1.3);
+                updated.y += (dy / dist) * (updated.speed * 1.3);
+              } else {
+                if (updated.waypointIdx < wps.length - 1) {
+                  updated.waypointIdx += 1;
+                } else {
+                  // Reached Elevator Lobby! Pause for passengers to enter
+                  updated.phase = VEHICLE_PHASES.VALET_ELEVATOR_PAUSE;
+                  updated.parkedTimer = 0;
+                  updated.isBraking = true;
+                  updated.angle = 0; // facing Elevator Lobby
+                }
+              }
+            } else {
+              updated.phase = VEHICLE_PHASES.VALET_ELEVATOR_PAUSE;
+              updated.parkedTimer = 0;
+              updated.isBraking = true;
+            }
+          } else if (phase === VEHICLE_PHASES.VALET_ELEVATOR_PAUSE) {
+            // Step 3 of Valet: Stop at Elevator Lobby for ~4 seconds (200 ticks)
+            updated.parkedTimer += 1;
+            updated.isBraking = true;
+            if (updated.parkedTimer >= 200) {
+              updated.phase = VEHICLE_PHASES.VALET_TO_EXIT;
+              updated.waypointIdx = 0;
+              updated.isBraking = false;
+              updated.valetExitWPs = [
+                { x: 0.73, y: LANDMARKS.BOTTOM_CROSS_Y, targetAngle: Math.PI / 2 },
+                { x: LANDMARKS.EXIT_AISLE_X, y: LANDMARKS.BOTTOM_CROSS_Y, targetAngle: Math.PI },
+                { x: LANDMARKS.EXIT_AISLE_X, y: 0.88, targetAngle: Math.PI / 2 },
+              ];
+            }
+          } else if (phase === VEHICLE_PHASES.VALET_TO_EXIT) {
+            // Step 4 of Valet: Drive from Elevator Lobby down East Aisle to Exit Gate (0.28, 0.88)
+            const wps = updated.valetExitWPs || [];
+            const currentWP = wps[updated.waypointIdx];
+
+            if (currentWP) {
+              const dx = currentWP.x - updated.x;
+              const dy = currentWP.y - updated.y;
+              const dist = Math.hypot(dx, dy);
+
+              let targetAngle = Math.atan2(dy, dx);
+              if (dist < 0.03 && currentWP.targetAngle !== undefined) {
+                targetAngle = currentWP.targetAngle;
+              }
+
+              let angleDiff = targetAngle - updated.angle;
+              while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+              while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+              updated.angle += angleDiff * 0.14;
+
+              if (dist > 0.01) {
+                updated.x += (dx / dist) * (updated.speed * 1.3);
+                updated.y += (dy / dist) * (updated.speed * 1.3);
+              } else {
+                if (updated.waypointIdx < wps.length - 1) {
+                  updated.waypointIdx += 1;
+                } else {
+                  // Reached Exit Gate! Terminate booking and clean up
+                  updated.phase = VEHICLE_PHASES.CLEANUP;
+                  activeSlotVehiclesRef.current.delete(slotId);
+
+                  if (onSlotStateChange) {
+                    onSlotStateChange(slotId, "available");
+                  }
+                  window.dispatchEvent(
+                    new CustomEvent("terminate-valet-booking", { detail: { slotId } })
+                  );
+                }
+              }
+            } else {
+              updated.phase = VEHICLE_PHASES.CLEANUP;
+              activeSlotVehiclesRef.current.delete(slotId);
+              if (onSlotStateChange) {
+                onSlotStateChange(slotId, "available");
+              }
+              window.dispatchEvent(
+                new CustomEvent("terminate-valet-booking", { detail: { slotId } })
+              );
+            }
           }
 
           if (updated.phase !== VEHICLE_PHASES.CLEANUP) {
@@ -303,48 +544,8 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = false, 
     return () => cancelAnimationFrame(animId);
   }, [onSlotStateChange]);
 
-  // Traffic simulator distributing cars evenly across Zone A, Zone B, Zone C
-  useEffect(() => {
-    if (!autoSimulate) return;
-
-    const interval = setInterval(() => {
-      if (vehiclesRef.current.length < 5) {
-        const assignedSet = getOccupiedOrAssignedSlotsSet();
-        const zoneKeys = ["A", "B", "C"];
-        const targetZone = zoneKeys[nextZoneIdxRef.current];
-        nextZoneIdxRef.current = (nextZoneIdxRef.current + 1) % zoneKeys.length;
-
-        const fl = selectedFloorRef.current || 1;
-        const candidateSlots = ZONE_SLOTS[targetZone].map((c) =>
-          c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
-        );
-        const unassignedInZone = candidateSlots.filter((code) => !assignedSet.has(code.toUpperCase()));
-
-        let targetSlot = null;
-        if (unassignedInZone.length > 0) {
-          targetSlot = unassignedInZone[Math.floor(Math.random() * unassignedInZone.length)];
-        } else {
-          const allFloorCandidates = [...ZONE_SLOTS.A, ...ZONE_SLOTS.B, ...ZONE_SLOTS.C].map((c) =>
-            c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
-          );
-          const allUnassigned = allFloorCandidates.filter((code) => !assignedSet.has(code.toUpperCase()));
-          if (allUnassigned.length > 0) {
-            targetSlot = allUnassigned[Math.floor(Math.random() * allUnassigned.length)];
-          }
-        }
-
-        if (targetSlot) {
-          simulateCarTrip(targetSlot);
-        }
-      }
-    }, 3800);
-
-    return () => clearInterval(interval);
-  }, [autoSimulate, simulateCarTrip, getOccupiedOrAssignedSlotsSet]);
-
   return {
     vehicles,
-    simulateCarTrip,
-    clearVehicles,
+    addVehicle,
   };
 }
