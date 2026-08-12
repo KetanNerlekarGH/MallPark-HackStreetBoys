@@ -394,12 +394,13 @@ export default function Floor3DView({
         merged = { ...merged, ...dbMatch, code: gridSlot.code };
       }
 
-      // Enforce Top-Left Zone A spots (A-101, A-102) as EV Charging only
+      // Strip EV flag from all slots by default
+      merged.is_ev = false;
+
+      // Enforce ONLY 2 EV Charging stations in Zone A (left column: A-101, A-102)
       if (gridSlot.code === "A-101" || gridSlot.code === "A-102") {
         merged.is_ev = true;
         merged.is_handicapped = false;
-      } else if (gridSlot.code === "C-126") {
-        merged.is_ev = false;
       }
 
       // Enforce Zone C Entrance spots (C-121, C-122) as Handicapped spots only
