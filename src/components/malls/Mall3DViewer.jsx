@@ -9,13 +9,48 @@ import { motion, AnimatePresence } from "framer-motion";
 /**
  * Animated Store Pin Node in 3D Space with hover HTML Tooltip
  */
+/**
+ * Pulsing ripple ring on the floor slab for selected stores
+ */
+function SelectedBeaconRing({ color }) {
+  const ringRef = useRef();
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    if (ringRef.current) {
+      const scale = 1 + (t * 2) % 2.5;
+      ringRef.current.scale.set(scale, scale, 1);
+      ringRef.current.material.opacity = 0.8 * (1 - (scale - 1) / 2.5);
+    }
+  });
+
+  return (
+    <mesh ref={ringRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.39, 0]}>
+      <ringGeometry args={[0.3, 0.36, 32]} />
+      <meshBasicMaterial color={color || "#3b82f6"} transparent opacity={0.8} depthWrite={false} />
+    </mesh>
+  );
+}
+
+/**
+ * Animated Store Pin Node in 3D Space with hover HTML Tooltip
+ */
 function StoreNodePin({ store, isFloorVisible, onSelectStore, selectedStore }) {
   const [hovered, setHovered] = useState(false);
   const meshRef = useRef();
+  const outerMeshRef = useRef();
 
   useFrame((state, delta) => {
+    const time = state.clock.getElapsedTime();
+    const bob = Math.sin(time * 3) * 0.08 + 0.12;
     if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.8;
+      meshRef.current.rotation.y += delta * 1.2;
+      meshRef.current.position.y = bob;
+    }
+    if (outerMeshRef.current) {
+      outerMeshRef.current.rotation.y -= delta * 0.6;
+      outerMeshRef.current.rotation.x += delta * 0.3;
+      outerMeshRef.current.position.y = bob;
     }
   });
 
@@ -25,7 +60,21 @@ function StoreNodePin({ store, isFloorVisible, onSelectStore, selectedStore }) {
 
   return (
     <group position={store.position}>
-      {/* Floating 3D Marker Gem */}
+      {/* Floor Anchor Ring - Flat on the floor slab */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.4, 0]} receiveShadow>
+        <ringGeometry args={[0, isSelected ? 0.35 : (hovered ? 0.25 : 0.12), 32]} />
+        <meshBasicMaterial
+          color={store.color || "#3b82f6"}
+          transparent
+          opacity={isSelected ? 0.8 : (hovered ? 0.6 : 0.3)}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Selected Beacon Ring - Pulsing outwards */}
+      {isSelected && <SelectedBeaconRing color={store.color} />}
+
+      {/* Solid Inner Diamond Gem */}
       <mesh
         ref={meshRef}
         onClick={(e) => {
@@ -42,27 +91,53 @@ function StoreNodePin({ store, isFloorVisible, onSelectStore, selectedStore }) {
           document.body.style.cursor = "auto";
         }}
       >
-        <octahedronGeometry args={[hovered || isSelected ? 0.45 : 0.35, 0]} />
+        <octahedronGeometry args={[hovered || isSelected ? 0.38 : 0.28, 0]} />
         <meshStandardMaterial
           color={store.color || "#3b82f6"}
           emissive={hovered || isSelected ? store.color || "#3b82f6" : "#000000"}
-          emissiveIntensity={hovered || isSelected ? 0.6 : 0}
-          metalness={0.7}
-          roughness={0.2}
+          emissiveIntensity={hovered || isSelected ? 0.7 : 0}
+          metalness={0.8}
+          roughness={0.15}
+        />
+      </mesh>
+
+      {/* Outer Rotating Wireframe Casing */}
+      <mesh
+        ref={outerMeshRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelectStore(store);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          setHovered(true);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          setHovered(false);
+          document.body.style.cursor = "auto";
+        }}
+      >
+        <octahedronGeometry args={[hovered || isSelected ? 0.52 : 0.42, 0]} />
+        <meshStandardMaterial
+          color={store.color || "#3b82f6"}
+          wireframe
+          transparent
+          opacity={hovered || isSelected ? 0.9 : 0.4}
         />
       </mesh>
 
       {/* Vertical Pin Support Line */}
       <line>
         <bufferGeometry attach="geometry" {...new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.4, 0)])} />
-        <lineBasicMaterial attach="material" color={store.color || "#3b82f6"} linewidth={2} />
+        <lineBasicMaterial attach="material" color={store.color || "#3b82f6"} linewidth={2} transparent opacity={0.7} />
       </line>
 
       {/* HTML Annotation Label on Hover or Select */}
       {(hovered || isSelected) && (
-        <Html position={[0, 0.6, 0]} center distanceFactor={15}>
+        <Html position={[0, 0.75, 0]} center distanceFactor={15}>
           <div className="bg-popover/95 text-popover-foreground border border-border px-2.5 py-1.5 rounded-lg shadow-xl text-xs font-semibold whitespace-nowrap backdrop-blur-sm pointer-events-none flex items-center gap-1.5 animate-in fade-in zoom-in-95">
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: store.color || "#3b82f6" }} />
+            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: store.color || "#3b82f6" }} />
             <div>
               <div className="font-bold">{store.name}</div>
               <div className="text-[10px] text-muted-foreground font-normal">{store.category} • Zone {store.zone}</div>
@@ -317,7 +392,142 @@ function AmanoraLayoutMesh({ mall, activeFloor }) {
   );
 }
 
-export default function Mall3DViewer({ selectedMall, activeFloor, onSelectStore, selectedStore }) {
+/**
+ * 4. Nexus Westend Mall Parametric 3D Layout
+ */
+function NexusLayoutMesh({ mall, activeFloor }) {
+  return (
+    <group>
+      {/* Central Glass Elevator Tower (Vertical Column through all floors) */}
+      <mesh position={[0, 4.0, 0]}>
+        <boxGeometry args={[1.8, 11, 1.8]} />
+        <meshStandardMaterial color="#06b6d4" transparent opacity={0.18} roughness={0.1} metalness={0.9} />
+      </mesh>
+      {/* Elevator Tower Metal Support Frame */}
+      {[-0.9, 0.9].map((x) =>
+        [-0.9, 0.9].map((z) => (
+          <mesh key={`el-frame-${x}-${z}`} position={[x, 4.0, z]}>
+            <cylinderGeometry args={[0.06, 0.06, 11, 8]} />
+            <meshStandardMaterial color="#0891b2" roughness={0.2} metalness={0.8} />
+          </mesh>
+        ))
+      )}
+
+      {mall.floors.map((fl) => {
+        const elevation = fl.elevation;
+        const isSelectedFloor = activeFloor === fl.id;
+        const isAllFloors = activeFloor === "all";
+
+        let opacity = 1.0;
+
+        if (!isAllFloors) {
+          const selectedElev = mall.floors.find((f) => f.id === activeFloor)?.elevation || 0;
+          if (elevation > selectedElev) {
+            opacity = 0.15;
+          } else if (elevation < selectedElev) {
+            opacity = 0.4;
+          }
+        }
+
+        const blockMat = new THREE.MeshStandardMaterial({
+          color: isSelectedFloor ? "#22d3ee" : "#0f172a",
+          roughness: 0.4,
+          metalness: 0.3,
+          transparent: true,
+          opacity: opacity,
+        });
+
+        const bridgeMat = new THREE.MeshStandardMaterial({
+          color: "#38bdf8",
+          transparent: true,
+          opacity: 0.25 * opacity,
+          roughness: 0.1,
+          metalness: 0.9,
+        });
+
+        const accentMat = new THREE.MeshStandardMaterial({
+          color: "#ec4899",
+          roughness: 0.2,
+          metalness: 0.7,
+          transparent: true,
+          opacity: opacity,
+        });
+
+        return (
+          <group key={fl.id} position={[0, elevation, 0]}>
+            {/* East Wing Slab */}
+            <mesh position={[-5, 0, 0]} receiveShadow castShadow>
+              <boxGeometry args={[6.5, 0.25, 11]} />
+              <primitive object={blockMat} attach="material" />
+            </mesh>
+
+            {/* West Wing Slab */}
+            <mesh position={[5, 0, 0]} receiveShadow castShadow>
+              <boxGeometry args={[6.5, 0.25, 11]} />
+              <primitive object={blockMat} attach="material" />
+            </mesh>
+
+            {/* Central Skybridge Connector */}
+            <mesh position={[0, 0.05, 0]} receiveShadow>
+              <boxGeometry args={[3.5, 0.15, 3.5]} />
+              <primitive object={bridgeMat} attach="material" />
+            </mesh>
+
+            {/* Structural Support Columns */}
+            {[-7, -3, 3, 7].map((x) =>
+              [-4.5, 4.5].map((z) => (
+                <mesh key={`col-${x}-${z}`} position={[x, -1.6, z]}>
+                  <cylinderGeometry args={[0.18, 0.18, 3.2, 12]} />
+                  <primitive object={accentMat} attach="material" />
+                </mesh>
+              ))
+            )}
+
+            {/* Escalators (Sleek angled boxes) between floors */}
+            {fl.id !== "2" && (
+              <group position={[0, 1.6, -2]} rotation={[0.4, 0, 0]}>
+                <mesh castShadow>
+                  <boxGeometry args={[0.6, 0.1, 4.8]} />
+                  <meshStandardMaterial color="#ec4899" roughness={0.3} metalness={0.7} transparent opacity={opacity} />
+                </mesh>
+              </group>
+            )}
+
+            {/* Ground Level Smart Parking Mini Cars */}
+            {fl.id === "G" && (
+              <group position={[-5, 0.15, 3]}>
+                {/* Car 1 */}
+                <group position={[-1, 0.1, 0]}>
+                  <mesh castShadow>
+                    <boxGeometry args={[1.1, 0.35, 0.65]} />
+                    <meshStandardMaterial color="#f43f5e" roughness={0.3} />
+                  </mesh>
+                  <mesh position={[0, 0.22, 0]}>
+                    <boxGeometry args={[0.65, 0.2, 0.5]} />
+                    <meshStandardMaterial color="#000000" roughness={0.1} />
+                  </mesh>
+                </group>
+                {/* Car 2 */}
+                <group position={[1, 0.1, 0.4]}>
+                  <mesh castShadow>
+                    <boxGeometry args={[1.1, 0.35, 0.65]} />
+                    <meshStandardMaterial color="#3b82f6" roughness={0.3} />
+                  </mesh>
+                  <mesh position={[0, 0.22, 0]}>
+                    <boxGeometry args={[0.65, 0.2, 0.5]} />
+                    <meshStandardMaterial color="#000000" roughness={0.1} />
+                  </mesh>
+                </group>
+              </group>
+            )}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+export default function Mall3DViewer({ selectedMall, activeFloor, onSelectFloor = () => {}, onSelectStore, selectedStore }) {
   const [viewMode, setViewMode] = useState("outside"); // "outside" | "3d"
   const [isNightMode, setIsNightMode] = useState(true);
   const [selectedHotspot, setSelectedHotspot] = useState(null);
@@ -586,9 +796,55 @@ export default function Mall3DViewer({ selectedMall, activeFloor, onSelectStore,
 
             <ContactShadows position={[0, -0.2, 0]} opacity={0.6} scale={40} blur={2.5} far={10} />
 
-            {selectedMall.id === "phoenix" && <PhoenixLayoutMesh mall={selectedMall} activeFloor={activeFloor} />}
-            {selectedMall.id === "pavilion" && <PavilionLayoutMesh mall={selectedMall} activeFloor={activeFloor} />}
-            {selectedMall.id === "amanora" && <AmanoraLayoutMesh mall={selectedMall} activeFloor={activeFloor} />}
+            {(selectedMall.id === "phoenix" || selectedMall.id === "phoenix-pune") && <PhoenixLayoutMesh mall={selectedMall} activeFloor={activeFloor} />}
+            {(selectedMall.id === "pavilion" || selectedMall.id === "pavilion-pune") && <PavilionLayoutMesh mall={selectedMall} activeFloor={activeFloor} />}
+            {(selectedMall.id === "amanora" || selectedMall.id === "amanora-pune") && <AmanoraLayoutMesh mall={selectedMall} activeFloor={activeFloor} />}
+            {(selectedMall.id === "nexus" || selectedMall.id === "nexus-westend-pune") && <NexusLayoutMesh mall={selectedMall} activeFloor={activeFloor} />}
+
+            {/* 3D Floor Isolator HTML Overlays */}
+            {activeFloor !== "all" && (
+              <Html position={[-12, 10, 0]} center distanceFactor={16}>
+                <button
+                  onClick={() => onSelectFloor("all")}
+                  className="bg-[#0f0a21]/95 text-purple-300 border border-purple-500/40 px-3 py-1.5 rounded-full shadow-lg text-xs font-mono font-semibold whitespace-nowrap backdrop-blur-sm flex items-center gap-1.5 hover:bg-purple-900/30 transition-all active:scale-95"
+                >
+                  <span className="w-1.5 h-1.5 bg-purple-400 rotate-45 animate-ping" />
+                  Show All Floors
+                </button>
+              </Html>
+            )}
+
+            {selectedMall.floors.map((fl) => {
+              const elevation = fl.elevation;
+              const isSelected = activeFloor === fl.id;
+              return (
+                <Html key={`lbl-${fl.id}`} position={[-10.5, elevation + 0.1, 1]} center distanceFactor={14}>
+                  <div
+                    onClick={() => onSelectFloor(fl.id)}
+                    className={`cursor-pointer transition-all duration-300 flex items-center gap-2 group select-none ${
+                      isSelected
+                        ? "text-primary dark:text-cyan-400 font-bold scale-105"
+                        : "text-muted-foreground hover:text-foreground hover:scale-102"
+                    }`}
+                  >
+                    {/* Diamond bullet */}
+                    <div
+                      className={`w-3.5 h-3.5 rotate-45 border flex items-center justify-center transition-all ${
+                        isSelected
+                          ? "bg-cyan-500/20 text-cyan-400 border-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)] scale-110"
+                          : "bg-transparent text-muted-foreground border-muted-foreground/50 group-hover:border-foreground"
+                      }`}
+                    >
+                      <div className={`w-1.5 h-1.5 rotate-45 ${isSelected ? "bg-cyan-400" : "bg-muted-foreground group-hover:bg-foreground"}`} />
+                    </div>
+                    <div className="text-left font-mono leading-none bg-[#090516]/80 px-2 py-1.5 rounded-xl border border-border/40 backdrop-blur-sm shadow-md">
+                      <div className="text-[11px] text-white font-bold">{fl.label}</div>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">{fl.category}</div>
+                    </div>
+                  </div>
+                </Html>
+              );
+            })}
 
             {selectedMall.stores.map((store) => {
               const isFloorVisible = activeFloor === "all" || activeFloor === store.floor;

@@ -20,9 +20,17 @@ export default function FloorSelector({ floors, selectedFloor, onSelectFloor, ma
           variant={selectedFloor === "all" ? "default" : "outline"}
           size="sm"
           onClick={() => onSelectFloor("all")}
-          className="h-8 text-xs font-medium gap-1.5 flex-1 sm:flex-initial"
+          className={`h-8 text-xs font-medium flex-1 sm:flex-initial transition-all ${
+            selectedFloor === "all"
+              ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+              : "hover:bg-purple-900/10 dark:hover:bg-purple-900/20 text-muted-foreground hover:text-foreground border-purple-500/20 dark:border-purple-900/40"
+          }`}
         >
-          <Layers className="w-3.5 h-3.5" />
+          {selectedFloor === "all" ? (
+            <span className="w-2 h-2 bg-white rotate-45 shrink-0 animate-[spin_4s_linear_infinite] mr-1.5 shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+          ) : (
+            <span className="w-1.5 h-1.5 bg-muted-foreground rotate-45 shrink-0 mr-1.5 opacity-60" />
+          )}
           All Floors
         </Button>
 
@@ -34,11 +42,17 @@ export default function FloorSelector({ floors, selectedFloor, onSelectFloor, ma
               variant={isActive ? "default" : "outline"}
               size="sm"
               onClick={() => onSelectFloor(fl.id)}
-              className={`h-8 text-xs font-medium gap-1 flex-1 sm:flex-initial transition-all ${
-                isActive ? "shadow-sm font-bold" : "hover:bg-muted"
+              className={`h-8 text-xs font-medium flex-1 sm:flex-initial transition-all ${
+                isActive
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                  : "hover:bg-purple-900/10 dark:hover:bg-purple-900/20 text-muted-foreground hover:text-foreground border-purple-500/20 dark:border-purple-900/40"
               }`}
             >
-              <Eye className={`w-3 h-3 ${isActive ? "text-primary-foreground" : "text-muted-foreground"}`} />
+              {isActive ? (
+                <span className="w-2 h-2 bg-white rotate-45 shrink-0 animate-[spin_4s_linear_infinite] mr-1.5 shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+              ) : (
+                <span className="w-1.5 h-1.5 bg-muted-foreground rotate-45 shrink-0 mr-1.5 opacity-60" />
+              )}
               Floor {fl.code}
             </Button>
           );
