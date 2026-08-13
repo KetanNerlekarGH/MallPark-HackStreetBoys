@@ -79,7 +79,8 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = true, s
         const zone = options.zone || zoneKeys[nextZoneIdxRef.current];
         nextZoneIdxRef.current = (nextZoneIdxRef.current + 1) % zoneKeys.length;
 
-        const fl = selectedFloorRef.current || 1;
+        const currentFl = selectedFloorRef.current;
+        const fl = String(currentFl).toLowerCase() === "all" ? Math.floor(1 + Math.random() * 3) : (Number(currentFl) || 1);
         const candidateSlots = ZONE_SLOTS[zone].map((c) =>
           c.replace(/([A-Z])-1(\d\d)/, `$1-${fl}$2`)
         );
@@ -287,6 +288,8 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = true, s
     window.addEventListener("dispatch-valet-pickup", handleValetPickup);
     return () => window.removeEventListener("dispatch-valet-pickup", handleValetPickup);
   }, []);
+
+
 
   // Main simulation tick loop
   useEffect(() => {
@@ -523,6 +526,9 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = true, s
                   }
                   window.dispatchEvent(
                     new CustomEvent("terminate-valet-booking", { detail: { slotId } })
+                  );
+                  window.dispatchEvent(
+                    new CustomEvent("valet-exited-notification", { detail: { slotId } })
                   );
                 }
               }

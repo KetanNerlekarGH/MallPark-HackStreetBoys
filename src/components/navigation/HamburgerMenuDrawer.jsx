@@ -104,7 +104,7 @@ export default function HamburgerMenuDrawer() {
                 </div>
                 <div className="text-left">
                   <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Valet Parking</div>
-                  <div className="text-xs text-purple-600 dark:text-purple-300/90 font-medium mt-0.5">VIP Concierge & Pickup</div>
+                  <div className="text-xs text-purple-600 dark:text-purple-300/90 font-medium mt-0.5">VIP Concierge &amp; Pickup</div>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-purple-500 dark:text-purple-300 group-hover:translate-x-1.5 transition-transform" />

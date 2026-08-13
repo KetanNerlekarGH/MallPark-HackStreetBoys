@@ -99,9 +99,8 @@ export default function Reservations() {
         toast({ title: `Payment confirmed · ₹${amount}`, description: "Exit QR issued — scan at the barrier" });
     };
 
-    const active = items.filter((r) => r.status === "active" && !r.is_valet && (!r.slot_code || !r.slot_code.startsWith("VALET")));
-    const valet = items.filter((r) => r.is_valet || (r.slot_code && r.slot_code.startsWith("VALET")));
-    const history = items.filter((r) => r.status !== "active" && !r.is_valet && (!r.slot_code || !r.slot_code.startsWith("VALET")));
+    const active = items.filter((r) => r.status === "active");
+    const history = items.filter((r) => r.status !== "active");
     const totalPaid = history.reduce(
         (s, r) => s + (r.status === "completed" ? r.paid_amount || r.estimated_fee || 0 : 0),
         0
@@ -109,7 +108,6 @@ export default function Reservations() {
 
     const tabs = [
         { id: "active", label: "Active", icon: Ticket, count: active.length },
-        { id: "valet", label: "Valet Bookings", icon: CarFront, count: valet.length },
         { id: "history", label: "History", icon: HistoryIcon, count: history.length },
     ];
 
@@ -118,7 +116,7 @@ export default function Reservations() {
             <div>
                 <p className="text-xs font-mono uppercase tracking-[0.25em] text-purple-600 dark:text-purple-300/80">Your bookings</p>
                 <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-foreground dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:via-purple-100 dark:to-indigo-200 dark:bg-clip-text">
-                    Reservations &amp; Valet Services
+                    Reservations &amp; Active Bookings
                 </h1>
             </div>
 
@@ -161,51 +159,6 @@ export default function Reservations() {
                 <div className="h-40 flex items-center justify-center">
                     <div className="w-6 h-6 border-2 border-purple-900 border-t-purple-400 rounded-full animate-spin" />
                 </div>
-            ) : tab === "valet" ? (
-                valet.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-border dark:border-purple-900/40 p-16 text-center bg-card/50 dark:bg-[#0d081c]/50 font-mono">
-                        <CarFront className="w-8 h-8 mx-auto text-purple-600/60 dark:text-purple-400/60" />
-                        <h3 className="text-sm font-bold text-foreground dark:text-white mt-3">No Active Valet Bookings</h3>
-                        <p className="mt-1 text-xs text-muted-foreground dark:text-purple-300/60 max-w-xs mx-auto">
-                            Request VIP Concierge Valet Service from the top-left features menu to have your car parked automatically.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {valet.map((r) => (
-                            <div
-                                key={r.id}
-                                className="rounded-2xl border border-purple-500/40 bg-card dark:bg-[#0d081c]/80 p-5 flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl transition-all shadow-md dark:shadow-[0_0_25px_rgba(168,85,247,0.15)]"
-                            >
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg font-extrabold tracking-tight text-foreground dark:text-white font-mono">{r.slot_code || "VALET-B114"}</span>
-                                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 uppercase">
-                                            VIP Valet Service
-                                        </span>
-                                    </div>
-                                    <p className="mt-1 text-sm text-muted-foreground dark:text-purple-200/70 font-mono">
-                                        {r.mall_name || "Mall"} · {r.vehicle_number || "MH-12-MP-8899"} · Main Entrance Gate · ₹{r.estimated_fee || 150}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30 flex items-center gap-1.5 font-mono">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> PARKED BY VALET
-                                    </span>
-                                    <Button
-                                        onClick={() => {
-                                            window.dispatchEvent(new CustomEvent("terminate-valet-booking", { detail: { slotId: r.slot_code || "B-114" } }));
-                                            load();
-                                        }}
-                                        className="rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium shadow-md text-xs h-10 px-4"
-                                    >
-                                        🚘 Request Driver Pickup
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )
             ) : tab === "active" ? (
                 active.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-border dark:border-purple-900/40 p-16 text-center bg-card/50 dark:bg-[#0d081c]/50">
