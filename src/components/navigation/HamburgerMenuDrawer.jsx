@@ -67,26 +67,27 @@ export default function HamburgerMenuDrawer() {
             </div>
 
             {/* 1. EMERGENCY SOS CALL FEATURE */}
+            {/* 1. EMERGENCY SOS CALL FEATURE */}
             <button
               onClick={() => {
                 setIsOpen(false);
                 setActiveModal("sos");
               }}
-              className="w-full p-3.5 rounded-2xl border border-rose-300 dark:border-rose-500/40 bg-rose-50/90 dark:bg-gradient-to-r dark:from-rose-950/50 dark:via-[#1d0710]/80 dark:to-purple-950/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm dark:shadow-[0_0_20px_rgba(244,63,94,0.15)] cursor-pointer"
+              className="w-full p-4 rounded-2xl border border-rose-200 dark:border-rose-500/40 bg-rose-50/90 dark:bg-gradient-to-r dark:from-[#2d0e19] dark:via-[#1c0812] dark:to-[#17050e] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm hover:shadow-lg dark:shadow-[0_0_20px_rgba(244,63,94,0.15)] dark:hover:shadow-[0_0_30px_rgba(244,63,94,0.3)] cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-sm group-hover:animate-bounce">
-                  <PhoneCall className="w-4 h-4" />
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-rose-500/20 border border-rose-400/50 text-rose-600 dark:text-rose-300 flex items-center justify-center shadow-[0_0_15px_rgba(244,63,94,0.25)] group-hover:scale-105 transition-transform">
+                  <PhoneCall className="w-5 h-5 text-rose-500 dark:text-rose-300" />
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase flex items-center gap-1.5">
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                     Emergency Call
                     <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                   </div>
-                  <div className="text-[10px] text-rose-700 dark:text-rose-300/80 font-medium">SOS Security & Helpline</div>
+                  <div className="text-xs text-rose-600 dark:text-rose-300/90 font-medium mt-0.5">SOS Security & Helpline</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-rose-600 dark:text-rose-400 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-5 h-5 text-rose-500 dark:text-rose-400 group-hover:translate-x-1.5 transition-transform" />
             </button>
 
             {/* 2. VALET PARKING SERVICE FEATURE */}
@@ -95,18 +96,18 @@ export default function HamburgerMenuDrawer() {
                 setIsOpen(false);
                 setActiveModal("valet");
               }}
-              className="w-full p-3.5 rounded-2xl border border-purple-300 dark:border-purple-500/40 bg-purple-50/90 dark:bg-gradient-to-r dark:from-purple-950/50 dark:via-[#170933]/80 dark:to-indigo-950/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm dark:shadow-[0_0_20px_rgba(168,85,247,0.15)] cursor-pointer"
+              className="w-full p-4 rounded-2xl border border-purple-200 dark:border-purple-500/40 bg-purple-50/90 dark:bg-gradient-to-r dark:from-[#230d36] dark:via-[#160724] dark:to-[#0f041b] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm hover:shadow-lg dark:shadow-[0_0_20px_rgba(168,85,247,0.15)] dark:hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/40 text-purple-600 dark:text-purple-300 flex items-center justify-center shadow-sm">
-                  <CarFront className="w-4 h-4" />
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-purple-500/20 border border-purple-400/50 text-purple-600 dark:text-purple-300 flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.25)] group-hover:scale-105 transition-transform">
+                  <CarFront className="w-5 h-5 text-purple-500 dark:text-purple-300" />
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase">Valet Parking</div>
-                  <div className="text-[10px] text-purple-700 dark:text-purple-300/80 font-medium">VIP Concierge & Pickup</div>
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Valet Parking</div>
+                  <div className="text-xs text-purple-600 dark:text-purple-300/90 font-medium mt-0.5">VIP Concierge & Pickup</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-purple-600 dark:text-purple-300 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-5 h-5 text-purple-500 dark:text-purple-300 group-hover:translate-x-1.5 transition-transform" />
             </button>
 
             {/* 3. FIND MY CAR FEATURE */}
@@ -115,18 +116,18 @@ export default function HamburgerMenuDrawer() {
                 setIsOpen(false);
                 setActiveModal("find-car");
               }}
-              className="w-full p-3.5 rounded-2xl border border-sky-300 dark:border-sky-500/40 bg-sky-50/90 dark:bg-gradient-to-r dark:from-sky-950/40 dark:via-[#07192a]/80 dark:to-purple-950/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm dark:shadow-[0_0_20px_rgba(14,165,233,0.15)] cursor-pointer"
+              className="w-full p-4 rounded-2xl border border-sky-200 dark:border-sky-500/40 bg-sky-50/90 dark:bg-gradient-to-r dark:from-[#0d2238] dark:via-[#081524] dark:to-[#050f1a] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-between group shadow-sm hover:shadow-lg dark:shadow-[0_0_20px_rgba(56,189,248,0.15)] dark:hover:shadow-[0_0_30px_rgba(56,189,248,0.3)] cursor-pointer"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-600 dark:text-sky-400 flex items-center justify-center shadow-sm">
-                  <Car className="w-4 h-4" />
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-sky-500/20 border border-sky-400/50 text-sky-600 dark:text-sky-300 flex items-center justify-center shadow-[0_0_15px_rgba(56,189,248,0.25)] group-hover:scale-105 transition-transform">
+                  <Car className="w-5 h-5 text-sky-500 dark:text-sky-300" />
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase">Find My Car</div>
-                  <div className="text-[10px] text-sky-700 dark:text-sky-300/80 font-medium">Active Parking Locator</div>
+                  <div className="text-xs font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Find My Car</div>
+                  <div className="text-xs text-sky-600 dark:text-sky-300/90 font-medium mt-0.5">Active Parking Locator</div>
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-sky-600 dark:text-sky-400 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-5 h-5 text-sky-500 dark:text-sky-400 group-hover:translate-x-1.5 transition-transform" />
             </button>
           </div>
 
