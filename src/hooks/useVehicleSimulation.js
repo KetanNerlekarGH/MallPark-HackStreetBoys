@@ -166,7 +166,7 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = true, s
       }
     });
 
-    // When a reservation ends (status becomes available), turn spot green immediately and dispatch the car to exit!
+    // When a reservation ends (status becomes available), turn spot green immediately and dispatch the car to Elevator Lobby, then Exit!
     setVehicles((prev) => {
       return prev.map((v) => {
         if (v.isReservedStationary && (v.phase === VEHICLE_PHASES.PARKED || v.phase === VEHICLE_PHASES.PARKING)) {
@@ -176,14 +176,23 @@ export function useVehicleSimulation({ onSlotStateChange, autoSimulate = true, s
             if (onSlotStateChange) {
               onSlotStateChange(v.slotId, "available");
             }
-            // Dispatch the car to reverse out and exit through the gate
+            const waypointsData = getVehicleWaypoints(v.slotId);
+            const info = waypointsData.info;
+            const corridorX = info && info.approach ? info.approach.x : 0.28;
+
+            // Dispatch the car to reverse out, drive to Elevator Lobby, pause, then exit
             return {
               ...v,
-              phase: VEHICLE_PHASES.LEAVING,
+              phase: VEHICLE_PHASES.VALET_LEAVING,
               waypointIdx: 0,
               isBraking: false,
               isReversing: true,
               isReservedStationary: false,
+              color: "#a855f7",
+              valetElevatorWPs: [
+                { x: corridorX, y: LANDMARKS.TOP_CROSS_Y, targetAngle: -Math.PI / 2 },
+                { x: 0.73, y: LANDMARKS.TOP_CROSS_Y, targetAngle: 0 },
+              ],
             };
           }
         }
