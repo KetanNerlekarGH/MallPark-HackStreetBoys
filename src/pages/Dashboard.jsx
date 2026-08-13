@@ -381,6 +381,7 @@ export default function Dashboard() {
                     slots={slots}
                     highlightCode={directions?.code}
                     onSelect={setSelected}
+                    onSlotStateChange={handleSlotStateChange}
                     selectedFloor={floor}
                     setSelectedFloor={setFloor}
                     selectedMall={selectedMall}

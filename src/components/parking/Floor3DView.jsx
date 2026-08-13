@@ -354,6 +354,7 @@ export default function Floor3DView({
   highlightCode,
   isARGuide = true,
   onSelect,
+  onSlotStateChange,
   selectedFloor: propSelectedFloor,
   setSelectedFloor: propSetSelectedFloor,
   selectedMall,
@@ -367,6 +368,13 @@ export default function Floor3DView({
 
   const selectedFloor = propSelectedFloor !== undefined ? propSelectedFloor : internalSelectedFloor;
   const setSelectedFloor = propSetSelectedFloor || setInternalSelectedFloor;
+
+  const onSlotStateChangeRef = useRef(onSlotStateChange);
+  useEffect(() => {
+    onSlotStateChangeRef.current = onSlotStateChange;
+  }, [onSlotStateChange]);
+
+  const updateSlotVisualStatusRef = useRef(null);
 
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
@@ -494,8 +502,67 @@ export default function Floor3DView({
     scene.add(blueNeonLight);
 
     const raycastableMeshes = [];
+    const slotMeshesMap = new Map();
     const floorsToRender = isAllMode ? [1, 2, 3] : [activeFloorNum];
     const FLOOR_HEIGHT = 9.0;
+
+    const updateSlotVisualStatus = (slotCode, newStatus) => {
+      if (!slotCode) return;
+      const targetCode = slotCode.trim().toUpperCase();
+      const meshData = slotMeshesMap.get(targetCode);
+      if (!meshData) return;
+
+      const { bayMesh, borderMesh, slotLabelMesh, is_ev, is_handicapped, displayCode } = meshData;
+      meshData.slot.status = newStatus;
+
+      if (bayMesh && bayMesh.userData && bayMesh.userData.slot) {
+        bayMesh.userData.slot.status = newStatus;
+      }
+
+      let neonColor = 0x10b981; // Green
+      let statusBg = "#10b981";
+      let groundColor = 0x0c1e20; // Available dark green ground
+
+      if (newStatus === "occupied") {
+        neonColor = 0xef4444; // RED
+        statusBg = "#ef4444";
+        groundColor = 0x3f121d; // Dark Red ground
+      } else if (newStatus === "reserved") {
+        neonColor = 0xf59e0b; // YELLOW / GOLD
+        statusBg = "#f59e0b";
+        groundColor = 0x382408; // Dark Amber ground
+      } else if (is_handicapped) {
+        neonColor = 0x3b82f6; // Blue
+        statusBg = "#2563eb";
+        groundColor = 0x0e1b38;
+      } else if (is_ev) {
+        neonColor = 0x0284c7; // Cyan
+        statusBg = "#0284c7";
+        groundColor = 0x0a2233;
+      }
+
+      if (bayMesh && bayMesh.material) {
+        bayMesh.material.color.setHex(groundColor);
+      }
+
+      if (borderMesh && borderMesh.material) {
+        borderMesh.material.color.setHex(neonColor);
+        borderMesh.material.emissive.setHex(neonColor);
+      }
+
+      if (slotLabelMesh && slotLabelMesh.material) {
+        const labelText = is_ev ? `${displayCode} EV ⚡` : is_handicapped ? `♿ ${displayCode}` : displayCode;
+        const newTex = createTextTexture(labelText, "#ffffff", statusBg, 72, 512, 256, true);
+        newTex.anisotropy = maxAnisotropy;
+        if (slotLabelMesh.material.map) {
+          slotLabelMesh.material.map.dispose();
+        }
+        slotLabelMesh.material.map = newTex;
+        slotLabelMesh.material.needsUpdate = true;
+      }
+    };
+
+    updateSlotVisualStatusRef.current = updateSlotVisualStatus;
 
     // Structural Support Pillars
     if (isAllMode) {
@@ -740,6 +807,20 @@ export default function Floor3DView({
         slotLabelMesh.position.set(x, yOff + 0.05, z);
         scene.add(slotLabelMesh);
 
+        // Register slot meshes in map for dynamic status updates
+        const meshInfo = {
+          bayMesh,
+          borderMesh,
+          slotLabelMesh,
+          slot: { ...slot, code: displayCode, floor: fNum },
+          is_ev,
+          is_handicapped,
+          code,
+          displayCode,
+        };
+        slotMeshesMap.set(displayCode.toUpperCase(), meshInfo);
+        slotMeshesMap.set(code.toUpperCase(), meshInfo);
+
         // PARKED CAR MODEL IN HORIZONTAL BAY
         if (isOccupied) {
           const carColor = slot.color || CAR_COLORS[Math.abs(displayCode.charCodeAt(0)) % CAR_COLORS.length];
@@ -772,11 +853,19 @@ export default function Floor3DView({
     const NUM_SIM_CARS = 3;
 
     const pickRandomAvailableSpot = (excludedCodes = new Set()) => {
-      const available = mergedSlots.filter(
-        (s) => s.status === "available" && !s.is_handicapped && !excludedCodes.has(s.code)
-      );
+      const available = mergedSlots.filter((s) => {
+        const codeKey = s.code.replace(/([A-Z])-1(\d\d)/, `$1-${activeFloorNum}$2`).toUpperCase();
+        const meshData = slotMeshesMap.get(codeKey) || slotMeshesMap.get(s.code.toUpperCase());
+        const currentStatus = meshData?.slot?.status || s.status;
+        return currentStatus === "available" && !s.is_handicapped && !excludedCodes.has(s.code.toUpperCase()) && !excludedCodes.has(codeKey);
+      });
       if (available.length === 0) {
-        const fallback = mergedSlots.filter((s) => s.status === "available");
+        const fallback = mergedSlots.filter((s) => {
+          const codeKey = s.code.replace(/([A-Z])-1(\d\d)/, `$1-${activeFloorNum}$2`).toUpperCase();
+          const meshData = slotMeshesMap.get(codeKey) || slotMeshesMap.get(s.code.toUpperCase());
+          const currentStatus = meshData?.slot?.status || s.status;
+          return currentStatus === "available";
+        });
         return fallback[Math.floor(Math.random() * fallback.length)] || GRID_SLOTS[0];
       }
       return available[Math.floor(Math.random() * available.length)];
@@ -975,6 +1064,15 @@ export default function Floor3DView({
             car.x = spot.x;
             car.state = "PARKED";
             car.parkTimer = 0;
+
+            const spotCode = spot.code.replace(/([A-Z])-1(\d\d)/, `$1-${activeFloorNum}$2`);
+            updateSlotVisualStatus(spotCode, "occupied");
+            updateSlotVisualStatus(spot.code, "occupied");
+
+            if (onSlotStateChangeRef.current) {
+              onSlotStateChangeRef.current(spotCode, "occupied");
+              onSlotStateChangeRef.current(spot.code, "occupied");
+            }
           }
         } else if (car.state === "PARKED") {
           car.parkTimer += 1;
@@ -994,6 +1092,15 @@ export default function Floor3DView({
             } else {
               car.state = "EXIT_LANE2";
               car.angle = 0;
+            }
+
+            const spotCode = spot.code.replace(/([A-Z])-1(\d\d)/, `$1-${activeFloorNum}$2`);
+            updateSlotVisualStatus(spotCode, "available");
+            updateSlotVisualStatus(spot.code, "available");
+
+            if (onSlotStateChangeRef.current) {
+              onSlotStateChangeRef.current(spotCode, "available");
+              onSlotStateChangeRef.current(spot.code, "available");
             }
           }
         } else if (car.state === "EXIT_LANE1") {
@@ -1052,7 +1159,20 @@ export default function Floor3DView({
       cancelAnimationFrame(animationFrameId);
       renderer.dispose();
     };
-  }, [mergedSlots, highlightCode, selectedFloor, cameraMode, autoRotate, CAR_COLORS, onSelect]);
+  }, [selectedFloor, cameraMode, autoRotate, CAR_COLORS, onSelect]);
+
+  // Sync slot visual changes from external props (e.g. reservations, valet)
+  useEffect(() => {
+    if (!slots || slots.length === 0) return;
+    const currentFloor = Number(selectedFloor) || 1;
+    slots.forEach((s) => {
+      if (s.floor === currentFloor || selectedFloor === "all") {
+        if (updateSlotVisualStatusRef.current) {
+          updateSlotVisualStatusRef.current(s.code, s.status);
+        }
+      }
+    });
+  }, [slots, selectedFloor]);
 
   // Handle Zoom
   const handleZoom = (delta) => {
