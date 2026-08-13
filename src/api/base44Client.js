@@ -76,9 +76,23 @@ function saveStoredSlots(slots, mallId = "default") {
   } catch (e) {}
 }
 
-function getStoredReservations(mallId = null) {
+function getActiveUserId() {
   try {
-    const raw = localStorage.getItem(MOCK_RESERVATIONS_KEY);
+    const raw = localStorage.getItem("auth_user") || localStorage.getItem("base44_mock_user");
+    if (raw) {
+      const u = JSON.parse(raw);
+      const id = u.id || u.username || u.email;
+      if (id) return String(id).trim().toLowerCase();
+    }
+  } catch (e) {}
+  return "default_user";
+}
+
+function getStoredReservations(mallId = null, userId = null) {
+  try {
+    const activeUserId = userId || getActiveUserId();
+    const key = `${MOCK_RESERVATIONS_KEY}_${activeUserId}`;
+    const raw = localStorage.getItem(key);
     if (raw) {
       const list = JSON.parse(raw);
       if (mallId) {
@@ -86,16 +100,17 @@ function getStoredReservations(mallId = null) {
       }
       return list;
     }
-    localStorage.setItem(MOCK_RESERVATIONS_KEY, JSON.stringify([]));
     return [];
   } catch (e) {
     return [];
   }
 }
 
-function saveStoredReservations(resList) {
+function saveStoredReservations(resList, userId = null) {
   try {
-    localStorage.setItem(MOCK_RESERVATIONS_KEY, JSON.stringify(resList));
+    const activeUserId = userId || getActiveUserId();
+    const key = `${MOCK_RESERVATIONS_KEY}_${activeUserId}`;
+    localStorage.setItem(key, JSON.stringify(resList));
   } catch (e) {}
 }
 
@@ -168,30 +183,33 @@ export const base44 = {
       }
     },
     Reservation: {
-      list: async (sortBy, limit, mallId = null) => {
-        return getStoredReservations(mallId);
+      list: async (sortBy, limit, mallId = null, userId = null) => {
+        return getStoredReservations(mallId, userId);
       },
-      filter: async (query, mallId = null) => {
-        const list = getStoredReservations(mallId);
+      filter: async (query, mallId = null, userId = null) => {
+        const list = getStoredReservations(mallId, userId);
         return list.filter((r) => {
           return Object.entries(query).every(([k, v]) => r[k] === v);
         });
       },
       create: async (data) => {
-        const list = getStoredReservations();
+        const activeUserId = getActiveUserId();
+        const list = getStoredReservations(null, activeUserId);
         const newItem = {
           id: "res_" + Date.now(),
+          user_id: activeUserId,
           ...data,
           created_date: new Date().toISOString()
         };
         list.unshift(newItem);
-        saveStoredReservations(list);
+        saveStoredReservations(list, activeUserId);
         return newItem;
       },
       update: async (id, updates) => {
-        const list = getStoredReservations();
+        const activeUserId = getActiveUserId();
+        const list = getStoredReservations(null, activeUserId);
         const updated = list.map((r) => (r.id === String(id) ? { ...r, ...updates } : r));
-        saveStoredReservations(updated);
+        saveStoredReservations(updated, activeUserId);
         return updated.find((r) => r.id === String(id)) || updates;
       }
     }
